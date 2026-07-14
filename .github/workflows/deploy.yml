@@ -1,38 +1,38 @@
 name: Frontend Dev Deploy
 
 on:
-  push:
-    branches: [ "develop" ]
+  push:
+    branches: [ "develop" ]
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-    steps:
-    - name: 1. 저장소 체크아웃
-      uses: actions/checkout@v3
+    steps:
+      - name: 1. 저장소 체크아웃
+        uses: actions/checkout@v4
 
-    - name: 2. Node.js 환경 설정
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
+      - name: 2. Node.js 환경 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: 3. 패키지 설치 및 빌드
-      run: |
-        npm ci
-        npm run build
+      - name: 3. 패키지 설치 및 빌드
+        run: |
+          npm ci
+          npm run build
 
-    - name: 4. Tailscale VPN 연결
-      uses: tailscale/github-action@v2
-      with:
-        authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: 4. Tailscale VPN 연결
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-    - name: 5. 개발 서버로 빌드된 파일 전송 (SCP)
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        source: "build/*"
-        target: "C:\Users\student\Desktop\SteamIron\build"
-        strip_components: 1
+      - name: 5. 개발 서버로 빌드된 파일 전송 (SCP)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "dist/*"
+          target: "C:/Users/student/Desktop/SteamIron/dist"
+          strip_components: 1
