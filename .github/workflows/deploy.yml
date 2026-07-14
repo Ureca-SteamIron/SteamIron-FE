@@ -36,3 +36,4 @@ jobs:
           source: "dist/*"
           target: "C:/Users/student/Desktop/SteamIron/dist"
           strip_components: 1
+          debug: true
