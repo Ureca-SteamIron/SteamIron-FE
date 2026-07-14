@@ -19,8 +19,8 @@ jobs:
 
     - name: 3. 패키지 설치 및 빌드
       run: |
-        npm ci
-        npm run build
+        npm ci
+        npm run build
 
     - name: 4. Tailscale VPN 연결
       uses: tailscale/github-action@v2
