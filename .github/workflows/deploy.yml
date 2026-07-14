@@ -6,7 +6,8 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    # m40327에 설치한 self-hosted 러너에서 실행 (빌드가 이 기계 위에서 돎)
+    runs-on: [ self-hosted, Windows ]
 
     steps:
       - name: 1. 저장소 체크아웃
@@ -22,18 +23,11 @@ jobs:
           npm ci
           npm run build
 
-      - name: 4. Tailscale VPN 연결
-        uses: tailscale/github-action@v2
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-
-      - name: 5. 개발 서버로 빌드된 파일 전송 (SCP)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "dist/*"
-          target: "C:/Users/student/Desktop/SteamIron/dist"
-          strip_components: 1
-          debug: true
+      - name: 4. 빌드 결과물을 서빙 폴더로 복사
+        shell: powershell
+        run: |
+          $dest = "C:/Users/student/Desktop/SteamIron/dist"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Remove-Item -Path "$dest/*" -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item -Path "dist/*" -Destination $dest -Recurse -Force
+          Write-Host "배포 완료 -> $dest"
