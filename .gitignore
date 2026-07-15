@@ -21,3 +21,8 @@ Thumbs.db
 # --- 로그 ---
 *.log
 npm-debug.log*
+
+# --- AI 에이전트 스킬 (각자 npx skills add로 설치) ---
+.agents/
+.claude/
+skills-lock.json
