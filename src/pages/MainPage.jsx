@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Box from '../shared/components/Box'
+import { getSession } from '../shared/utils/auth'
 
 // 메인: 검색 / login(discord)·마이페이지 / top100·MY 탭(화면 전환 없이 목록만 교체) / 정렬 / 필터
 export default function MainPage() {
   const navigate = useNavigate()
-  const location = useLocation()
 
   // top100 ↔ my(찜목록) 탭. 페이지 이동 없이 아래 목록 영역만 바뀐다
   const [tab, setTab] = useState('top100')
 
-  // 로그인 시뮬레이션: 로그인 페이지에서 넘어오면 login 자리에 프사/이름 표시
-  // (실제 구현 때는 전역 상태/토큰 여부로 판단하게 됨)
-  const isLoggedIn = location.state?.loggedIn ?? false
+  // 로그인 세션(토큰+유저정보). 있으면 login 자리에 프사/이름 표시. 새로고침해도 유지됨
+  const user = getSession()
 
   const tabStyle = (name) => ({
     padding: '10px 20px',
@@ -29,10 +28,18 @@ export default function MainPage() {
         <div style={{ display: 'flex', gap: '10px' }}>
           <Box onClick={() => navigate('/notifications')}>알림</Box>
           <Box onClick={() => navigate('/me')}>마이페이지</Box>
-          {isLoggedIn ? (
-            <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '28px', height: '28px', border: '2px solid black', borderRadius: '50%' }} />
-              <span>디코 이름</span>
+          {user ? (
+            <Box onClick={() => navigate('/me')} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt=""
+                  style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+                />
+              ) : (
+                <div style={{ width: '28px', height: '28px', border: '2px solid black', borderRadius: '50%' }} />
+              )}
+              <span>{user.username}</span>
             </Box>
           ) : (
             <Box onClick={() => navigate('/login')}>login (discord)</Box>
