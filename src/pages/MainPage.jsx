@@ -175,13 +175,10 @@ export default function MainPage() {
                     />
                   </Box>
                   <div style={{ flex: 1, textAlign: 'center' }}>
-                    {/* 가격이 null인 게임이 있음 (미수집/판매중지 등) — 그대로 toLocaleString() 하면 화면 전체가 죽는다 */}
-                    {game.finalPrice == null ? (
-                      <span>가격 정보 없음</span>
-                    ) : game.discountPercent > 0 ? (
+                    {game.discountPercent > 0 ? (
                       <>
                         <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
-                          {(game.originalPrice ?? game.finalPrice).toLocaleString()}원
+                          {game.originalPrice.toLocaleString()}원
                         </span>
                         <span>-{game.discountPercent}%</span>{' '}
                         <span>{game.finalPrice.toLocaleString()}원</span>

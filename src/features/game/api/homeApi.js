@@ -12,5 +12,16 @@ export async function getHomeData(filters = {}) {
     throw new Error(data.message ?? 'home 데이터 조회 실패')
   }
 
-  return data.data
+  const home = data.data
+  return {
+    ...home,
+    // 가격이 null인 게임이 있음(미수집/판매중지 등) → 팀 결정에 따라 전부 0 처리.
+    // 화면마다 방어하는 대신 데이터 입구에서 한 번에 정규화한다 (null이 새면 화면 전체가 죽음)
+    topGames: (home.topGames ?? []).map((game) => ({
+      ...game,
+      originalPrice: game.originalPrice ?? 0,
+      finalPrice: game.finalPrice ?? 0,
+      discountPercent: game.discountPercent ?? 0,
+    })),
+  }
 }
