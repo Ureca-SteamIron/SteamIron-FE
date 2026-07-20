@@ -13,11 +13,10 @@ export const API_BASE_URL =
 //    Tailscale IP가 사람마다 다르므로(예: 100.96.97.2 / 100.75.133.23) 하나로 고정하면
 //    다른 IP로 접속한 사람은 승인 후 남의 주소로 돌아가버린다.
 //    window.location.origin = 지금 브라우저가 보고 있는 주소(스킴+호스트+포트).
-//  ⚠ 여기서 만들어지는 각 주소를 Discord 개발자 포털 Redirects에 전부 등록해야 함
-//    (예: http://localhost:5173/auth/callback, http://100.96.97.2:8080/auth/callback,
-//         http://100.75.133.23:8080/auth/callback)
+//    각 주소를 Discord 개발자 포털 Redirects에 등록 완료
 const DISCORD_CLIENT_ID = '1527166724489871420'
-const DISCORD_REDIRECT_URI = `${window.location.origin}/auth/callback`
+// authorize와 code 교환(BE) 양쪽이 똑같은 값을 써야 하므로 export해서 콜백에서 재사용한다.
+export const DISCORD_REDIRECT_URI = `${window.location.origin}/auth/callback`
 
 // 로그인 버튼을 누르면 이동할 Discord 인증 페이지 주소를 만든다
 export function buildDiscordAuthorizeUrl() {

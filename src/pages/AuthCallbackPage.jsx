@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '../shared/components/Box'
-import { API_BASE_URL } from '../shared/constants/auth'
+import { API_BASE_URL, DISCORD_REDIRECT_URI } from '../shared/constants/auth'
 import { saveSession } from '../shared/utils/auth'
 
 // Discord가 인증 후 code를 붙여 되돌려보내는 착지 페이지 (/auth/callback).
@@ -21,10 +21,12 @@ export default function AuthCallbackPage() {
       return
     }
 
+    // redirectUri도 함께 전송: BE가 code를 교환할 때 authorize에 쓴 값과 똑같이 써야 하기 때문.
+    // (접속 IP마다 주소가 달라 BE가 고정값을 쓸 수 없음)
     fetch(`${API_BASE_URL}/api/auth/login/discord`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, redirectUri: DISCORD_REDIRECT_URI }),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(`로그인 실패 (${res.status})`)
@@ -33,7 +35,7 @@ export default function AuthCallbackPage() {
       .then((data) => {
         // 토큰 + 표시용 유저 정보(username/avatarUrl)를 함께 저장 (지금은 localStorage)
         saveSession(data)
-        setStatus(`환영합니다, ${data.username}님! 🎉 메인으로 이동합니다...`)
+        setStatus(`환영합니다, ${data.username}님!  메인으로 이동합니다...`)
         setTimeout(() => navigate('/'), 1200)
       })
       .catch((err) => setStatus(err.message))
