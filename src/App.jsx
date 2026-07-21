@@ -5,6 +5,7 @@ import GameDetailPage from './pages/GameDetailPage'
 import MyPage from './pages/MyPage'
 import NotificationsPage from './pages/NotificationsPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
+import DiscordAccountSetupPage from './pages/DiscordAccountSetupPage'
 import SearchResultPage from './pages/SearchResultPage'
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<MainPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/auth/account-setup" element={<DiscordAccountSetupPage />} />
         <Route path="/search" element={<SearchResultPage />} />
         <Route path="/games/:gameId" element={<GameDetailPage />} />
         <Route path="/me" element={<MyPage />} />
