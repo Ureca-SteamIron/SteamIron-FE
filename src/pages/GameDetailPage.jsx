@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Box from '../shared/components/Box'
-import { getGameDetail } from '../features/game/api/gameApi'
+import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
 import { createAlert } from '../features/alert/api/alertApi'
 import AlertForm from '../features/alert/components/AlertForm'
 import { getSession } from '../shared/utils/auth'
@@ -15,6 +15,10 @@ export default function GameDetailPage() {
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // 갱신 버튼: 중복 클릭 방지용 로딩 상태, 실패 시 보여줄 메시지
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState(null)
 
   // 가격 알림 설정 폼
   const [showAlertForm, setShowAlertForm] = useState(false)
@@ -31,6 +35,18 @@ export default function GameDetailPage() {
       })
       .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
       .finally(() => setSavingAlert(false))
+  }
+
+  // 갱신 버튼 클릭 시 Steam 최신 정보로 재조회, 성공하면 game state를 그대로 교체
+  const handleRefresh = () => {
+    if (refreshing) return
+    setRefreshing(true)
+    setRefreshError(null)
+
+    refreshGame(gameId)
+      .then((data) => setGame(data))
+      .catch((err) => setRefreshError(err.response?.data?.message ?? err.message))
+      .finally(() => setRefreshing(false))
   }
 
   useEffect(() => {
@@ -56,7 +72,26 @@ export default function GameDetailPage() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <Box onClick={() => navigate('/')} style={{ display: 'inline-block' }}>← 메인으로</Box>
+      {/* 좌: 메인으로, 우: 갱신 버튼 — 같은 라인에 배치 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box onClick={() => navigate('/')} style={{ display: 'inline-block' }}>
+          ← 메인으로
+        </Box>
+        <Box
+          onClick={handleRefresh}
+          style={{
+            display: 'inline-block',
+            cursor: refreshing ? 'default' : 'pointer',
+            opacity: refreshing ? 0.5 : 1,
+          }}
+        >
+          {refreshing ? '갱신 중...' : '갱신'}
+        </Box>
+      </div>
+
+      {refreshError && (
+        <Box style={{ marginTop: '10px' }}>갱신 실패: {refreshError}</Box>
+      )}
 
       {loading && <Box style={{ marginTop: '20px' }}>불러오는 중...</Box>}
       {error && <Box style={{ marginTop: '20px' }}>에러: {error}</Box>}

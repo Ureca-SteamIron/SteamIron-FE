@@ -52,3 +52,27 @@ export function getAllGames({ genre, priceType, minPrice, maxPrice, minDiscount,
     })
     .then((res) => res.data.data) // ApiResponse.data = PageResponse
 }
+
+// BE POST /api/games/{appId}/refresh: Steam API에서 최신 정보를 가져와 game 테이블 갱신 후
+// 갱신된 GameDetailResponse를 그대로 반환한다. getGameDetail과 동일한 응답 모양이라 null 가격 처리도 동일하게 적용.
+export async function refreshGame(appId) {
+  const user = getSession()
+
+  const { data } = await axiosClient.post(
+    `/api/games/${appId}/refresh`,
+    null,
+    { params: user ? { userId: user.userId } : {} }
+  )
+
+  if (!data.success) {
+    throw new Error(data.message ?? '게임 정보 갱신 실패')
+  }
+
+  const game = data.data
+  return {
+    ...game,
+    originalPrice: game.originalPrice ?? 0,
+    finalPrice: game.finalPrice ?? 0,
+    discountPercent: game.discountPercent ?? 0,
+  }
+}
