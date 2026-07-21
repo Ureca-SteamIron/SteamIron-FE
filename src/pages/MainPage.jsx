@@ -41,6 +41,9 @@ const DEFAULT_FILTERS = {
 const NAME_COLUMN_WIDTH = '180px'
 const HEART_COLUMN_WIDTH = '36px'
 
+// BE GameService.SEARCH_MIN_KEYWORD_LENGTH와 동일 기준 (1글자 검색은 결과가 너무 많아 느려짐)
+const SEARCH_MIN_KEYWORD_LENGTH = 2
+
 // 하트 토글 버튼: 찜 여부(liked)에 따라 add/remove API를 호출
 function WishlistHeartButton({ liked, onClick, disabled }) {
   return (
@@ -68,6 +71,20 @@ function WishlistHeartButton({ liked, onClick, disabled }) {
 // 메인: 검색 / login(discord)·마이페이지 / top100·MY 탭(화면 전환 없이 목록만 교체) / 정렬 / 필터
 export default function MainPage() {
   const navigate = useNavigate()
+
+  // 검색창 입력값. Enter 시 /search?keyword=...로 이동 (검색 결과는 별도 화면)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchError, setSearchError] = useState('')
+
+  const handleSearchSubmit = () => {
+    const trimmed = searchKeyword.trim()
+    if (trimmed.length < SEARCH_MIN_KEYWORD_LENGTH) {
+      setSearchError(`검색어는 ${SEARCH_MIN_KEYWORD_LENGTH}자 이상 입력해주세요`)
+      return
+    }
+    setSearchError('')
+    navigate(`/search?keyword=${encodeURIComponent(trimmed)}`)
+  }
 
   // top100 ↔ my(찜목록) 탭. 페이지 이동 없이 아래 목록 영역만 바뀐다
   const [tab, setTab] = useState('top100')
@@ -272,7 +289,21 @@ export default function MainPage() {
     <div style={{ padding: '20px' }}>
       {/* 상단: 검색 + 알림/마이페이지/로그인 */}
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-        <Box style={{ flex: 1, maxWidth: '600px', margin: '0 auto' }}>검색</Box>
+        <Box style={{ flex: 1, maxWidth: '600px', margin: '0 auto', padding: '4px 10px' }}>
+          <input
+            type="text"
+            placeholder="게임 이름으로 검색"
+            value={searchKeyword}
+            onChange={(e) => {
+              setSearchKeyword(e.target.value)
+              if (searchError) setSearchError('')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearchSubmit()
+            }}
+            style={{ width: '100%', border: 'none', outline: 'none' }}
+          />
+        </Box>
         <div style={{ display: 'flex', gap: '10px' }}>
           <Box onClick={() => navigate('/notifications')}>알림</Box>
           <Box onClick={() => navigate('/me')}>마이페이지</Box>
@@ -294,6 +325,12 @@ export default function MainPage() {
           )}
         </div>
       </div>
+
+      {searchError && (
+        <div style={{ textAlign: 'center', color: 'red', fontSize: '13px', marginTop: '6px' }}>
+          {searchError}
+        </div>
+      )}
 
       {/* 탭: top100 / MY — 클릭하면 아래 목록만 교체 */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
