@@ -44,6 +44,9 @@ const HEART_COLUMN_WIDTH = '36px'
 const PAGE_SIZE = 20
 const PAGE_GROUP_SIZE = 10
 
+// BE GameService.SEARCH_MIN_KEYWORD_LENGTH와 동일 기준 (1글자 검색은 결과가 너무 많아 느려짐)
+const SEARCH_MIN_KEYWORD_LENGTH = 2
+
 function getPageNumbers(currentPage, totalPages, groupSize = PAGE_GROUP_SIZE) {
   const currentGroup = Math.floor((currentPage - 1) / groupSize)
   const start = currentGroup * groupSize + 1
@@ -377,6 +380,12 @@ export default function MainPage() {
           )}
         </div>
       </div>
+
+      {searchError && (
+        <div style={{ textAlign: 'center', color: 'red', fontSize: '13px', marginTop: '6px' }}>
+          {searchError}
+        </div>
+      )}
 
       {/* 탭: 전체게임 / top100 / MY — 클릭하면 아래 목록만 교체 */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
