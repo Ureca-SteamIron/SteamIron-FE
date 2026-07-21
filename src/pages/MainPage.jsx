@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '../shared/components/Box'
 import { getSession } from '../shared/utils/auth'
 import { getHomeData } from '../features/game/api/homeApi'
+import { getAllGames } from '../features/game/api/gameApi'
 import { getMyWishlist, addWishlist, removeWishlist } from '../features/wishlist/api/wishlistApi'
 import { FaHeart, FaRegHeart } from 'react-icons/fa'
 
@@ -41,8 +41,20 @@ const DEFAULT_FILTERS = {
 const NAME_COLUMN_WIDTH = '180px'
 const HEART_COLUMN_WIDTH = '36px'
 
+const PAGE_SIZE = 20
+const PAGE_GROUP_SIZE = 10
+
 // BE GameService.SEARCH_MIN_KEYWORD_LENGTH와 동일 기준 (1글자 검색은 결과가 너무 많아 느려짐)
 const SEARCH_MIN_KEYWORD_LENGTH = 2
+
+function getPageNumbers(currentPage, totalPages, groupSize = PAGE_GROUP_SIZE) {
+  const currentGroup = Math.floor((currentPage - 1) / groupSize)
+  const start = currentGroup * groupSize + 1
+  const end = Math.min(start + groupSize - 1, totalPages)
+  const pages = []
+  for (let p = start; p <= end; p++) pages.push(p)
+  return { pages, start, end }
+}
 
 // 하트 토글 버튼: 찜 여부(liked)에 따라 add/remove API를 호출
 function WishlistHeartButton({ liked, onClick, disabled }) {
@@ -106,6 +118,7 @@ export default function MainPage() {
       minDiscount: draftFilters.minDiscount === '' ? 0 : Number(draftFilters.minDiscount),
       sale: draftFilters.sale,
     })
+    setAllGamesPage(1)
   }
 
   // top100: /api/home 에서 로드 (로그인 여부와 무관한 공개 데이터). 정렬/필터가 바뀔 때마다 재조회
@@ -142,6 +155,43 @@ export default function MainPage() {
     fontWeight: tab === name ? 'bold' : 'normal',
     textDecoration: tab === name ? 'underline' : 'none',
   })
+
+  // ===== 전체 게임 탭 상태 =====
+  const [allGames, setAllGames] = useState([])
+  const [allGamesLoading, setAllGamesLoading] = useState(true)
+  const [allGamesError, setAllGamesError] = useState(null)
+  const [allGamesPage, setAllGamesPage] = useState(1)
+  const [allGamesTotalPages, setAllGamesTotalPages] = useState(0)
+
+  useEffect(() => {
+    if (tab !== 'all') return
+
+    let cancelled = false
+    setAllGamesLoading(true)
+    setAllGamesError(null)
+
+    getAllGames({ ...appliedFilters, sort, page: allGamesPage, size: PAGE_SIZE })
+      .then((data) => {
+        if (cancelled) return
+        setAllGames(data.content ?? [])
+        setAllGamesTotalPages(data.totalPages ?? 0)
+      })
+      .catch((err) => {
+        if (!cancelled) setAllGamesError(err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setAllGamesLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [tab, sort, appliedFilters, allGamesPage])
+
+  // 정렬/필터가 바뀌면 전체 게임 탭도 1페이지로 리셋
+  useEffect(() => {
+    setAllGamesPage(1)
+  }, [sort, appliedFilters])
 
   // 찜 목록: /api/users/me/wishlist 에서 로드 (로그인 필요)
   const [wishlist, setWishlist] = useState([])
@@ -238,6 +288,9 @@ export default function MainPage() {
     const liked = wishlistIds.has(game.appId)
     const isPending = pendingIds.has(game.appId)
 
+    const originalPrice = game.originalPrice ?? 0
+    const finalPrice = game.finalPrice ?? 0
+
     return (
       <Box
         key={game.appId}
@@ -252,16 +305,18 @@ export default function MainPage() {
           />
         </Box>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          {game.discountPercent > 0 ? (
+          {finalPrice === 0 ? (
+            <span>무료</span>
+          ) : game.discountPercent > 0 ? (
             <>
               <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
-                {game.originalPrice.toLocaleString()}원
+                {originalPrice.toLocaleString()}원
               </span>
               <span>-{game.discountPercent}%</span>{' '}
-              <span>{game.finalPrice.toLocaleString()}원</span>
+              <span>{finalPrice.toLocaleString()}원</span>
             </>
           ) : (
-            <span>{game.finalPrice.toLocaleString()}원</span>
+            <span>{finalPrice.toLocaleString()}원</span>
           )}
         </div>
         <div
@@ -332,10 +387,19 @@ export default function MainPage() {
         </div>
       )}
 
-      {/* 탭: top100 / MY — 클릭하면 아래 목록만 교체 */}
+      {/* 탭: 전체게임 / top100 / MY — 클릭하면 아래 목록만 교체 */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
         <Box style={{ display: 'flex', padding: 0 }}>
-          <div style={{ ...tabStyle('top100'), borderRight: '2px solid black' }} onClick={() => setTab('top100')}>
+          <div
+            style={{ ...tabStyle('all'), borderRight: '2px solid black' }}
+            onClick={() => setTab('all')}
+          >
+            전체 게임
+          </div>
+          <div
+            style={{ ...tabStyle('top100'), borderRight: '2px solid black' }}
+            onClick={() => setTab('top100')}
+          >
             top100
           </div>
           <div style={tabStyle('my')} onClick={() => setTab('my')}>
@@ -349,11 +413,7 @@ export default function MainPage() {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
             <Box style={{ width: '250px' }}>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                style={{ width: '100%' }}
-              >
+              <select value={sort} onChange={(e) => setSort(e.target.value)} style={{ width: '100%' }}>
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
@@ -363,7 +423,7 @@ export default function MainPage() {
             </Box>
           </div>
 
-          {tab === 'top100' ? (
+          {tab === 'top100' && (
             <>
               {topGamesLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
               {topGamesError && <Box style={{ marginBottom: '10px' }}>에러: {topGamesError}</Box>}
@@ -372,7 +432,87 @@ export default function MainPage() {
               )}
               {topGames.map(renderGameRow)}
             </>
-          ) : (
+          )}
+
+          {tab === 'all' && (
+            <>
+              {allGamesLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
+              {allGamesError && <Box style={{ marginBottom: '10px' }}>에러: {allGamesError}</Box>}
+              {!allGamesLoading && !allGamesError && allGames.length === 0 && (
+                <Box style={{ marginBottom: '10px' }}>표시할 게임이 없습니다</Box>
+              )}
+              {allGames.map(renderGameRow)}
+
+              {!allGamesLoading && !allGamesError && allGamesTotalPages > 0 && (() => {
+                const { pages, end } = getPageNumbers(allGamesPage, allGamesTotalPages)
+                const isFirstPage = allGamesPage === 1
+                const isLastPage = allGamesPage === allGamesTotalPages
+
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '20px' }}>
+                    <Box
+                      onClick={() => !isFirstPage && setAllGamesPage(1)}
+                      style={{
+                        cursor: isFirstPage ? 'default' : 'pointer',
+                        opacity: isFirstPage ? 0.4 : 1,
+                        padding: '6px 10px',
+                      }}
+                    >
+                      {'<<'}
+                    </Box>
+                    <Box
+                      onClick={() => !isFirstPage && setAllGamesPage((p) => Math.max(1, p - 1))}
+                      style={{
+                        cursor: isFirstPage ? 'default' : 'pointer',
+                        opacity: isFirstPage ? 0.4 : 1,
+                        padding: '6px 10px',
+                      }}
+                    >
+                      {'<'}
+                    </Box>
+
+                    {pages.map((p) => (
+                      <Box
+                        key={p}
+                        onClick={() => setAllGamesPage(p)}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '6px 10px',
+                          fontWeight: p === allGamesPage ? 'bold' : 'normal',
+                          textDecoration: p === allGamesPage ? 'underline' : 'none',
+                        }}
+                      >
+                        {p}
+                      </Box>
+                    ))}
+
+                    <Box
+                      onClick={() => !isLastPage && setAllGamesPage((p) => Math.min(allGamesTotalPages, p + 1))}
+                      style={{
+                        cursor: isLastPage ? 'default' : 'pointer',
+                        opacity: isLastPage ? 0.4 : 1,
+                        padding: '6px 10px',
+                      }}
+                    >
+                      {'>'}
+                    </Box>
+                    <Box
+                      onClick={() => !isLastPage && setAllGamesPage(Math.min(allGamesTotalPages, end + 1))}
+                      style={{
+                        cursor: isLastPage ? 'default' : 'pointer',
+                        opacity: isLastPage ? 0.4 : 1,
+                        padding: '6px 10px',
+                      }}
+                    >
+                      {'>>'}
+                    </Box>
+                  </div>
+                )
+              })()}
+            </>
+          )}
+
+          {tab === 'my' && (
             <>
               {/* MY 탭: 찜 목록 로딩/에러/빈 목록/실제 데이터 렌더링 (top100과 동일한 상태 처리 패턴) */}
               {wishlistLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
