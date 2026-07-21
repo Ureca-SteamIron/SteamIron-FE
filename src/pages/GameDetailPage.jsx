@@ -2,15 +2,36 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Box from '../shared/components/Box'
 import { getGameDetail } from '../features/game/api/gameApi'
+import { createAlert } from '../features/alert/api/alertApi'
+import AlertForm from '../features/alert/components/AlertForm'
+import { getSession } from '../shared/utils/auth'
 
 // 상세페이지: 상세정보(썸네일/가격) / 가격 히스토리 차트 / AI 요약 / 커뮤니티(댓글)
 export default function GameDetailPage() {
   const navigate = useNavigate()
   const { gameId } = useParams()
+  const user = getSession()
 
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // 가격 알림 설정 폼
+  const [showAlertForm, setShowAlertForm] = useState(false)
+  const [savingAlert, setSavingAlert] = useState(false)
+  const [alertMsg, setAlertMsg] = useState('')
+
+  const handleCreateAlert = (payload) => {
+    setSavingAlert(true)
+    setAlertMsg('')
+    createAlert(gameId, payload)
+      .then(() => {
+        setAlertMsg('알림이 설정되었습니다.')
+        setShowAlertForm(false)
+      })
+      .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
+      .finally(() => setSavingAlert(false))
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -68,9 +89,33 @@ export default function GameDetailPage() {
                   <span>{game.finalPrice.toLocaleString()}원</span>
                 )}
               </div>
-              <Box onClick={() => navigate('/notifications')} style={{ display: 'inline-block', marginTop: '10px' }}>
-                가격 변동 알림 설정
-              </Box>
+              {/* 가격 알림 설정 (로그인 필요) */}
+              {user ? (
+                <div style={{ marginTop: '10px' }}>
+                  <Box
+                    onClick={() => setShowAlertForm((v) => !v)}
+                    style={{ display: 'inline-block', cursor: 'pointer' }}
+                  >
+                    가격 변동 알림 설정
+                  </Box>
+                  {showAlertForm && (
+                    <AlertForm
+                      originalPrice={game.originalPrice}
+                      submitting={savingAlert}
+                      onSubmit={handleCreateAlert}
+                      onCancel={() => setShowAlertForm(false)}
+                    />
+                  )}
+                  {alertMsg && <div style={{ marginTop: '8px' }}>{alertMsg}</div>}
+                </div>
+              ) : (
+                <Box
+                  onClick={() => navigate('/login')}
+                  style={{ display: 'inline-block', marginTop: '10px', cursor: 'pointer' }}
+                >
+                  로그인하고 알림 설정
+                </Box>
+              )}
             </Box>
           </div>
 
