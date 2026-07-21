@@ -26,21 +26,35 @@ export async function getGameDetail(appId) {
   }
 }
 
-// BE 응답: GameSimpleResponse[] (top100과 동일한 모양) — 다만 top100 범위 제한 없이 전체 게임 대상 검색
-export async function searchGames(keyword) {
+// getHomeData와 동일한 이유로 가격 null을 여기서 한 번에 0 처리
+function normalizePrices(gameList) {
+  return (gameList ?? []).map((game) => ({
+    ...game,
+    originalPrice: game.originalPrice ?? 0,
+    finalPrice: game.finalPrice ?? 0,
+    discountPercent: game.discountPercent ?? 0,
+  }))
+}
+
+// BE GameSearchResponse: { games: GameSimpleResponse[], similarGames: GameSimpleResponse[],
+//   page, size, totalElements, totalPages, hasNext }
+// games는 부분 일치(페이지네이션 + filters 대상), similarGames는 pg_trgm 유사 검색 결과
+// (1페이지 & games가 1페이지에 다 들어갈 때만 채워짐, 최대 5개, filters 미적용).
+// top100 범위 제한 없이 전체 게임 대상 검색. size는 안 넘기면 BE 기본값(25, 스팀과 동일)이 적용된다.
+// filters는 BE GameFilterRequest와 1:1 대응 { genre, priceType, minPrice, maxPrice, minDiscount, sale, sort }
+export async function searchGames(keyword, page = 0, filters = {}) {
   const { data } = await axiosClient.get('/api/games/search', {
-    params: { keyword },
+    params: { keyword, page, ...filters },
   })
 
   if (!data.success) {
     throw new Error(data.message ?? '게임 검색 실패')
   }
 
-  // getHomeData와 동일한 이유로 가격 null을 여기서 한 번에 0 처리
-  return (data.data ?? []).map((game) => ({
-    ...game,
-    originalPrice: game.originalPrice ?? 0,
-    finalPrice: game.finalPrice ?? 0,
-    discountPercent: game.discountPercent ?? 0,
-  }))
+  const result = data.data
+  return {
+    ...result,
+    games: normalizePrices(result.games),
+    similarGames: normalizePrices(result.similarGames),
+  }
 }
