@@ -10,14 +10,14 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa'
 // BE GameFilterRequest.genre 후보 (별도 장르 목록 API가 없어 스팀 장르명으로 하드코딩)
 const GENRE_OPTIONS = [
   { value: 'all', label: '전체' },
-  { value: 'Action', label: '액션' },
-  { value: 'Adventure', label: '어드벤처' },
-  { value: 'RPG', label: 'RPG' },
-  { value: 'Strategy', label: '전략' },
-  { value: 'Simulation', label: '시뮬레이션' },
-  { value: 'Casual', label: '캐주얼' },
-  { value: 'Sports', label: '스포츠' },
-  { value: 'Racing', label: '레이싱' },
+  { value: 'Action', label: '액션' },      // DB: Action (영어)
+  { value: '어드벤처', label: '어드벤처' },   // DB: 어드벤처
+  { value: 'RPG', label: 'RPG' },          // DB: RPG (영어)
+  { value: '전략', label: '전략' },
+  { value: '시뮬레이션', label: '시뮬레이션' },
+  { value: '캐주얼', label: '캐주얼' },
+  { value: '스포츠', label: '스포츠' },
+  { value: '레이싱', label: '레이싱' },
 ]
 
 const SORT_OPTIONS = [
@@ -25,8 +25,8 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: '낮은 가격순' },
   { value: 'price_desc', label: '높은 가격순' },
   { value: 'discount_desc', label: '할인율 높은순' },
-  { value: 'name_asc', label: '이름순 (가나다)' },
-  { value: 'name_desc', label: '이름 역순' },
+  { value: 'name_asc', label: '이름순 (A-Z)' },
+  { value: 'name_desc', label: '이름 역순 (Z-A)' },
 ]
 
 const DEFAULT_FILTERS = {
@@ -80,6 +80,20 @@ function WishlistHeartButton({ liked, onClick, disabled }) {
 // 메인: 검색 / login(discord)·마이페이지 / top100·MY 탭(화면 전환 없이 목록만 교체) / 정렬 / 필터
 export default function MainPage() {
   const navigate = useNavigate()
+
+  // 검색창 입력값. Enter 시 /search?keyword=...로 이동 (검색 결과는 별도 화면)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchError, setSearchError] = useState('')
+
+  const handleSearchSubmit = () => {
+    const trimmed = searchKeyword.trim()
+    if (trimmed.length < SEARCH_MIN_KEYWORD_LENGTH) {
+      setSearchError(`검색어는 ${SEARCH_MIN_KEYWORD_LENGTH}자 이상 입력해주세요`)
+      return
+    }
+    setSearchError('')
+    navigate(`/search?keyword=${encodeURIComponent(trimmed)}`)
+  }
 
   // top100 ↔ my(찜목록) 탭. 페이지 이동 없이 아래 목록 영역만 바뀐다
   const [tab, setTab] = useState('top100')
@@ -327,7 +341,21 @@ export default function MainPage() {
     <div style={{ padding: '20px' }}>
       {/* 상단: 검색 + 알림/마이페이지/로그인 */}
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-        <Box style={{ flex: 1, maxWidth: '600px', margin: '0 auto' }}>검색</Box>
+        <Box style={{ flex: 1, maxWidth: '600px', margin: '0 auto', padding: '4px 10px' }}>
+          <input
+            type="text"
+            placeholder="게임 이름으로 검색"
+            value={searchKeyword}
+            onChange={(e) => {
+              setSearchKeyword(e.target.value)
+              if (searchError) setSearchError('')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearchSubmit()
+            }}
+            style={{ width: '100%', border: 'none', outline: 'none' }}
+          />
+        </Box>
         <div style={{ display: 'flex', gap: '10px' }}>
           <Box onClick={() => navigate('/notifications')}>알림</Box>
           <Box onClick={() => navigate('/me')}>마이페이지</Box>
