@@ -10,14 +10,14 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa'
 // BE GameFilterRequest.genre 후보 (별도 장르 목록 API가 없어 스팀 장르명으로 하드코딩)
 const GENRE_OPTIONS = [
   { value: 'all', label: '전체' },
-  { value: 'Action', label: '액션' },
-  { value: 'Adventure', label: '어드벤처' },
-  { value: 'RPG', label: 'RPG' },
-  { value: 'Strategy', label: '전략' },
-  { value: 'Simulation', label: '시뮬레이션' },
-  { value: 'Casual', label: '캐주얼' },
-  { value: 'Sports', label: '스포츠' },
-  { value: 'Racing', label: '레이싱' },
+  { value: 'Action', label: '액션' },      // DB: Action (영어)
+  { value: '어드벤처', label: '어드벤처' },   // DB: 어드벤처
+  { value: 'RPG', label: 'RPG' },          // DB: RPG (영어)
+  { value: '전략', label: '전략' },
+  { value: '시뮬레이션', label: '시뮬레이션' },
+  { value: '캐주얼', label: '캐주얼' },
+  { value: '스포츠', label: '스포츠' },
+  { value: '레이싱', label: '레이싱' },
 ]
 
 const SORT_OPTIONS = [
@@ -25,8 +25,8 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: '낮은 가격순' },
   { value: 'price_desc', label: '높은 가격순' },
   { value: 'discount_desc', label: '할인율 높은순' },
-  { value: 'name_asc', label: '이름순 (가나다)' },
-  { value: 'name_desc', label: '이름 역순' },
+  { value: 'name_asc', label: '이름순 (A-Z)' },
+  { value: 'name_desc', label: '이름 역순 (Z-A)' },
 ]
 
 const DEFAULT_FILTERS = {
