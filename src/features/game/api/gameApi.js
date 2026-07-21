@@ -25,3 +25,22 @@ export async function getGameDetail(appId) {
     discountPercent: game.discountPercent ?? 0,
   }
 }
+
+// BE 응답: GameSimpleResponse[] (top100과 동일한 모양) — 다만 top100 범위 제한 없이 전체 게임 대상 검색
+export async function searchGames(keyword) {
+  const { data } = await axiosClient.get('/api/games/search', {
+    params: { keyword },
+  })
+
+  if (!data.success) {
+    throw new Error(data.message ?? '게임 검색 실패')
+  }
+
+  // getHomeData와 동일한 이유로 가격 null을 여기서 한 번에 0 처리
+  return (data.data ?? []).map((game) => ({
+    ...game,
+    originalPrice: game.originalPrice ?? 0,
+    finalPrice: game.finalPrice ?? 0,
+    discountPercent: game.discountPercent ?? 0,
+  }))
+}
