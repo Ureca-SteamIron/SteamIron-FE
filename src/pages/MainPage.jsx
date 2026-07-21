@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Box from '../shared/components/Box'
 import { getSession } from '../shared/utils/auth'
 import { getHomeData } from '../features/game/api/homeApi'
@@ -83,6 +83,47 @@ function WishlistHeartButton({ liked, onClick, disabled }) {
 // 메인: 검색 / login(discord)·마이페이지 / top100·MY 탭(화면 전환 없이 목록만 교체) / 정렬 / 필터
 export default function MainPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // URL에서 초기값 읽기 (없으면 기본값)
+  const [tab, setTabState] = useState(searchParams.get('tab') || 'top100')
+  const [sort, setSortState] = useState(searchParams.get('sort') || 'popular')
+  const [allGamesPage, setAllGamesPageState] = useState(Number(searchParams.get('page')) || 1)
+
+  // 상태 변경 + URL 반영을 함께 처리하는 wrapper
+  const setTab = (newTab) => {
+    setTabState(newTab)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('tab', newTab)
+      return next
+    })
+  }
+
+  const setSort = (newSort) => {
+    setSortState(newSort)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('sort', newSort)
+      return next
+    })
+  }
+
+  const setAllGamesPage = (updater, options = {}) => {
+    const nextPage = typeof updater === 'function' ? updater(allGamesPage) : updater
+    setAllGamesPageState(nextPage)
+    setSearchParams((sp) => {
+      const next = new URLSearchParams(sp)
+      next.set('page', String(nextPage))
+      return next
+    }, options)
+  }
+
+  useEffect(() => {
+    setTabState(searchParams.get('tab') || 'top100')
+    setSortState(searchParams.get('sort') || 'popular')
+    setAllGamesPageState(Number(searchParams.get('page')) || 1)
+  }, [searchParams])
 
   // 검색창 입력값. Enter 시 /search?keyword=...로 이동 (검색 결과는 별도 화면)
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -98,14 +139,10 @@ export default function MainPage() {
     navigate(`/search?keyword=${encodeURIComponent(trimmed)}`)
   }
 
-  // top100 ↔ my(찜목록) 탭. 페이지 이동 없이 아래 목록 영역만 바뀐다
-  const [tab, setTab] = useState('top100')
-
   // 로그인 세션(토큰+유저정보). 있으면 login 자리에 프사/이름 표시. 새로고침해도 유지됨
   const user = getSession()
 
   // 정렬은 선택 즉시 적용. 필터(장르/가격/할인)는 값을 모아뒀다가 "적용" 버튼으로 한번에 반영
-  const [sort, setSort] = useState('popular')
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS)
 
@@ -118,8 +155,13 @@ export default function MainPage() {
       minDiscount: draftFilters.minDiscount === '' ? 0 : Number(draftFilters.minDiscount),
       sale: draftFilters.sale,
     })
-    setAllGamesPage(1)
+    // setAllGamesPage(1) 호출 삭제 — 아래 useEffect가 처리
   }
+
+  // 정렬/필터가 바뀌면 전체 게임 탭도 1페이지로 리셋
+  useEffect(() => {
+    setAllGamesPage(1, { replace: true })
+  }, [sort, appliedFilters])
 
   // top100: /api/home 에서 로드 (로그인 여부와 무관한 공개 데이터). 정렬/필터가 바뀔 때마다 재조회
   const [topGames, setTopGames] = useState([])
@@ -160,7 +202,6 @@ export default function MainPage() {
   const [allGames, setAllGames] = useState([])
   const [allGamesLoading, setAllGamesLoading] = useState(true)
   const [allGamesError, setAllGamesError] = useState(null)
-  const [allGamesPage, setAllGamesPage] = useState(1)
   const [allGamesTotalPages, setAllGamesTotalPages] = useState(0)
 
   useEffect(() => {
@@ -188,10 +229,7 @@ export default function MainPage() {
     }
   }, [tab, sort, appliedFilters, allGamesPage])
 
-  // 정렬/필터가 바뀌면 전체 게임 탭도 1페이지로 리셋
-  useEffect(() => {
-    setAllGamesPage(1)
-  }, [sort, appliedFilters])
+
 
   // 찜 목록: /api/users/me/wishlist 에서 로드 (로그인 필요)
   const [wishlist, setWishlist] = useState([])
