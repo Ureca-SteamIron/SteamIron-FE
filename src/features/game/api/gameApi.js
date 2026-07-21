@@ -25,3 +25,11 @@ export async function getGameDetail(appId) {
     discountPercent: game.discountPercent ?? 0,
   }
 }
+
+export function getAllGames({ genre, priceType, minPrice, maxPrice, minDiscount, sale, sort, page, size }) {
+  return axiosClient
+    .get('/api/games/list', {
+      params: { genre, priceType, minPrice, maxPrice, minDiscount, sale, sort, page, size },
+    })
+    .then((res) => res.data.data) // ApiResponse.data = PageResponse
+}
