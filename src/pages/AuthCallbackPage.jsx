@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '../shared/components/Box'
-import { API_BASE_URL, DISCORD_REDIRECT_URI } from '../shared/constants/auth'
-import { saveSession } from '../shared/utils/auth'
+import { DISCORD_REDIRECT_URI } from '../shared/constants/auth'
+import { exchangeDiscordCode } from '../features/auth/api/authApi'
+import { saveDiscordAccountSetupToken, saveSession } from '../shared/utils/auth'
 
-// Discord가 인증 후 code를 붙여 되돌려보내는 착지 페이지 (/auth/callback).
-// URL의 code를 꺼내 백엔드로 보내고, 받은 토큰을 저장한 뒤 메인으로 이동한다.
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
-  const [status, setStatus] = useState('로그인 처리 중...')
-  const calledRef = useRef(false) // StrictMode에서 두 번 실행돼 code가 두 번 제출되는 것 방지 (code는 1회용)
+  const [status, setStatus] = useState('Discord 로그인 처리 중...')
+  const calledRef = useRef(false)
 
   useEffect(() => {
     if (calledRef.current) return
@@ -17,28 +16,22 @@ export default function AuthCallbackPage() {
 
     const code = new URLSearchParams(window.location.search).get('code')
     if (!code) {
-      setStatus('인증 code가 없습니다. 다시 로그인해주세요.')
+      setStatus('Discord 인증 정보가 없습니다. 다시 로그인해주세요.')
       return
     }
 
-    // redirectUri도 함께 전송: BE가 code를 교환할 때 authorize에 쓴 값과 똑같이 써야 하기 때문.
-    // (접속 IP마다 주소가 달라 BE가 고정값을 쓸 수 없음)
-    fetch(`${API_BASE_URL}/api/auth/login/discord`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, redirectUri: DISCORD_REDIRECT_URI }),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`로그인 실패 (${res.status})`)
-        return res.json()
-      })
+    exchangeDiscordCode(code, DISCORD_REDIRECT_URI)
       .then((data) => {
-        // 토큰 + 표시용 유저 정보(username/avatarUrl)를 함께 저장 (지금은 localStorage)
+        if (data.accountSetupRequired) {
+          saveDiscordAccountSetupToken(data.accountSetupToken)
+          navigate('/auth/account-setup', { replace: true })
+          return
+        }
+
         saveSession(data)
-        setStatus(`환영합니다, ${data.username}님!  메인으로 이동합니다...`)
-        setTimeout(() => navigate('/'), 1200)
+        navigate('/', { replace: true })
       })
-      .catch((err) => setStatus(err.message))
+      .catch((error) => setStatus(error.message))
   }, [navigate])
 
   return (
