@@ -42,9 +42,10 @@ function normalizePrices(gameList) {
 // (1페이지 & games가 1페이지에 다 들어갈 때만 채워짐, 최대 5개, filters 미적용).
 // top100 범위 제한 없이 전체 게임 대상 검색. size는 안 넘기면 BE 기본값(25, 스팀과 동일)이 적용된다.
 // filters는 BE GameFilterRequest와 1:1 대응 { genre, priceType, minPrice, maxPrice, minDiscount, sale, sort }
-export async function searchGames(keyword, page = 0, filters = {}) {
+// size를 명시적으로 넘기면(검색 자동완성 드롭다운처럼 적은 개수만 필요할 때) 그 값으로 요청한다.
+export async function searchGames(keyword, page = 0, filters = {}, size) {
   const { data } = await axiosClient.get('/api/games/search', {
-    params: { keyword, page, ...filters },
+    params: { keyword, page, size, ...filters },
   })
 
   if (!data.success) {
