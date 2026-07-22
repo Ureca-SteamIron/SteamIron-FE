@@ -5,6 +5,8 @@ import { clearSession, getSession } from '../shared/utils/auth'
 import { getMyAccount, updateCredentials } from '../features/user/api/userApi'
 import { getMyWishlist, removeWishlist } from '../features/wishlist/api/wishlistApi'
 import { FaHeart } from 'react-icons/fa'
+import { getMyComments } from '../features/comment/api/commentApi'
+import { deleteComment as deleteMyComment } from '../features/comment/api/commentApi'
 
 const NAME_COLUMN_WIDTH = '180px'
 const HEART_COLUMN_WIDTH = '36px'
@@ -186,6 +188,34 @@ export default function MyPage() {
     )
   }
 
+  const [myComments, setMyComments] = useState([])
+  const [myCommentsLoading, setMyCommentsLoading] = useState(true)
+  const [myCommentsError, setMyCommentsError] = useState(null)
+
+  const loadMyComments = () => {
+    if (!user) {
+      setMyCommentsLoading(false)
+      return
+    }
+    setMyCommentsLoading(true)
+    setMyCommentsError(null)
+    getMyComments()
+      .then((page) => setMyComments(page.content ?? []))
+      .catch((err) => setMyCommentsError(err.response?.data?.message ?? err.message))
+      .finally(() => setMyCommentsLoading(false))
+  }
+
+  useEffect(() => {
+    loadMyComments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleDeleteMyComment = (commentId) => {
+    deleteMyComment(commentId)
+      .then(() => setMyComments((prev) => prev.filter((c) => c.id !== commentId)))
+      .catch((err) => alert(err.response?.data?.message ?? err.message))
+  }
+
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -283,8 +313,40 @@ export default function MyPage() {
       {/* 내 커뮤니티 글 */}
       <Box style={{ marginTop: '20px' }}>
         <div>내 커뮤니티 글 (내가 쓴 글 / 댓글 목록)</div>
-        <Box style={{ marginTop: '10px' }}>내 댓글 1 (수정/삭제)</Box>
-        <Box style={{ marginTop: '10px' }}>내 댓글 2 (수정/삭제)</Box>
+
+        {!user && <Box style={{ marginTop: '10px' }}>로그인이 필요합니다</Box>}
+        {user && myCommentsLoading && <Box style={{ marginTop: '10px' }}>불러오는 중...</Box>}
+        {user && myCommentsError && <Box style={{ marginTop: '10px' }}>에러: {myCommentsError}</Box>}
+        {user && !myCommentsLoading && !myCommentsError && myComments.length === 0 && (
+          <Box style={{ marginTop: '10px' }}>작성한 댓글이 없습니다</Box>
+        )}
+
+        {user &&
+          !myCommentsLoading &&
+          !myCommentsError &&
+          myComments.map((comment) => (
+            <Box
+              key={comment.id}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}
+            >
+              <div
+                onClick={() => navigate(`/games/${comment.gameId}`)}
+                style={{ flex: 1, cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: '12px', color: '#888' }}>{comment.gameName}</div>
+                <div>{comment.content}</div>
+                <div style={{ fontSize: '12px', color: '#888' }}>
+                  {new Date(comment.createdAt).toLocaleString()}
+                </div>
+              </div>
+              <Box
+                onClick={() => handleDeleteMyComment(comment.id)}
+                style={{ cursor: 'pointer' }}
+              >
+                삭제
+              </Box>
+            </Box>
+          ))}
       </Box>
     </div>
   )
