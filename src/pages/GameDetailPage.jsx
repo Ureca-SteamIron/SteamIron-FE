@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { FaBell, FaBellSlash } from 'react-icons/fa'
 import Box from '../shared/components/Box'
 import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
-import { createAlert } from '../features/alert/api/alertApi'
+import {
+  createAlert,
+  deleteAlert,
+  getMyAlerts,
+  setAlertActive,
+  updateAlert,
+} from '../features/alert/api/alertApi'
 import AlertForm from '../features/alert/components/AlertForm'
 import { getSession } from '../shared/utils/auth'
 import CommentSection from '../features/comment/components/CommentSection'
@@ -49,19 +56,105 @@ export default function GameDetailPage() {
 
   const [showAlertForm, setShowAlertForm] = useState(false)
   const [savingAlert, setSavingAlert] = useState(false)
+  const [loadingAlert, setLoadingAlert] = useState(false)
+  const [togglingAlert, setTogglingAlert] = useState(false)
+  const [existingAlert, setExistingAlert] = useState(null)
   const [alertMsg, setAlertMsg] = useState('')
 
-  const handleCreateAlert = (payload) => {
+  const findCurrentGameAlert = () =>
+    getMyAlerts().then((alerts) =>
+      alerts.find((item) => String(item.gameId) === String(gameId)) ?? null,
+    )
+
+  const handleSaveAlert = (payload) => {
     setSavingAlert(true)
     setAlertMsg('')
-    createAlert(gameId, payload)
-      .then(() => {
-        setAlertMsg('알림이 설정되었습니다.')
+
+    const wasInactive = existingAlert && !existingAlert.isActive
+    const request = existingAlert
+      ? updateAlert(existingAlert.alertId, payload).then(() =>
+          wasInactive ? setAlertActive(existingAlert.alertId, true) : undefined,
+        )
+      : createAlert(gameId, payload)
+
+    request
+      .then(findCurrentGameAlert)
+      .then((savedAlert) => {
+        setExistingAlert(savedAlert)
+        setAlertMsg(
+          existingAlert
+            ? wasInactive
+              ? '알림 설정을 변경하고 다시 켰습니다.'
+              : '알림 설정이 변경되었습니다.'
+            : '알림이 설정되었습니다.',
+        )
         setShowAlertForm(false)
       })
       .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
       .finally(() => setSavingAlert(false))
   }
+
+  const handleBellToggle = () => {
+    if (togglingAlert) return
+
+    if (!existingAlert) {
+      setShowAlertForm((current) => !current)
+      setAlertMsg('')
+      return
+    }
+
+    setTogglingAlert(true)
+    setAlertMsg('')
+
+    if (existingAlert.isActive) {
+      deleteAlert(existingAlert.alertId)
+        .then(() => {
+          setExistingAlert(null)
+          setShowAlertForm(false)
+          setAlertMsg('가격 알림과 저장된 목표가를 삭제했습니다.')
+        })
+        .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
+        .finally(() => setTogglingAlert(false))
+      return
+    }
+
+    setAlertActive(existingAlert.alertId, true)
+      .then(() => {
+        setExistingAlert((current) => ({ ...current, isActive: true }))
+        setShowAlertForm(true)
+        setAlertMsg('알림을 다시 켰습니다.')
+      })
+      .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
+      .finally(() => setTogglingAlert(false))
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!user) {
+      setExistingAlert(null)
+      return undefined
+    }
+
+    setLoadingAlert(true)
+    setExistingAlert(null)
+    findCurrentGameAlert()
+      .then((alert) => {
+        if (!cancelled) setExistingAlert(alert)
+      })
+      .catch((err) => {
+        if (!cancelled) setAlertMsg(err.response?.data?.message ?? err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAlert(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+    // 로그인 세션은 페이지 진입 시 결정되고, 게임이 바뀔 때 해당 게임의 알림만 다시 조회한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId])
 
   // 남은 쿨다운을 계산해서 state에 반영 (초 단위, 0 이하면 0으로 클램프)
   const recalcCooldown = () => {
@@ -120,6 +213,7 @@ export default function GameDetailPage() {
   }, [gameId])
 
   const isRefreshDisabled = refreshing || cooldownSec > 0
+  const isBellActive = existingAlert ? existingAlert.isActive : showAlertForm
 
   const refreshLabel = refreshing
     ? '갱신 중...'
@@ -179,19 +273,67 @@ export default function GameDetailPage() {
               </div>
               {user ? (
                 <div style={{ marginTop: '10px' }}>
-                  <Box
-                    onClick={() => setShowAlertForm((v) => !v)}
-                    style={{ display: 'inline-block', cursor: 'pointer' }}
-                  >
-                    가격 변동 알림 설정
-                  </Box>
-                  {showAlertForm && (
-                    <AlertForm
-                      originalPrice={game.originalPrice}
-                      submitting={savingAlert}
-                      onSubmit={handleCreateAlert}
-                      onCancel={() => setShowAlertForm(false)}
-                    />
+                  {loadingAlert ? (
+                    <div>알림 설정을 불러오는 중...</div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={handleBellToggle}
+                          disabled={togglingAlert}
+                          aria-label={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
+                          title={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
+                          style={{
+                            border: '2px solid black',
+                            background: 'transparent',
+                            color: 'inherit',
+                            padding: '9px 12px',
+                            cursor: togglingAlert ? 'default' : 'pointer',
+                            opacity: togglingAlert ? 0.5 : 1,
+                            fontSize: '24px',
+                            lineHeight: 1,
+                          }}
+                        >
+                          {isBellActive ? <FaBell /> : <FaBellSlash />}
+                        </button>
+                        <span>{isBellActive ? '가격 알림 ON' : '가격 알림 OFF'}</span>
+
+                        {existingAlert?.isActive && !showAlertForm && (
+                          <Box
+                            onClick={() => setShowAlertForm(true)}
+                            style={{ display: 'inline-block', cursor: 'pointer' }}
+                          >
+                            수정
+                          </Box>
+                        )}
+                      </div>
+
+                      {existingAlert?.isActive && !showAlertForm && (
+                        <div style={{ marginTop: '10px', color: '#777' }}>
+                          <div>
+                            할인 시작 알림: {existingAlert.discountStartEnabled ? 'ON' : 'OFF'}
+                          </div>
+                          <div>
+                            지정 할인율 알림: {existingAlert.targetDiscountEnabled
+                              ? `${existingAlert.discountRate}% 이상 · 목표가 약 ${existingAlert.targetPrice?.toLocaleString()}원`
+                              : 'OFF'}
+                          </div>
+                        </div>
+                      )}
+
+                      {isBellActive && showAlertForm && (
+                        <AlertForm
+                          originalPrice={game.originalPrice}
+                          initialDiscountStartEnabled={existingAlert?.discountStartEnabled ?? false}
+                          initialTargetDiscountEnabled={existingAlert?.targetDiscountEnabled ?? true}
+                          initialRate={existingAlert?.discountRate ?? 30}
+                          submitting={savingAlert}
+                          onSubmit={handleSaveAlert}
+                          onCancel={() => setShowAlertForm(false)}
+                        />
+                      )}
+                    </>
                   )}
                   {alertMsg && <div style={{ marginTop: '8px' }}>{alertMsg}</div>}
                 </div>

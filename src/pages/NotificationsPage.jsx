@@ -105,14 +105,23 @@ export default function NotificationsPage() {
 
         {alerts.map((a) => {
           const reached =
-            a.currentPrice != null && a.targetPrice != null && a.currentPrice <= a.targetPrice
+            a.targetDiscountEnabled &&
+            a.currentPrice != null &&
+            a.targetPrice != null &&
+            a.currentPrice <= a.targetPrice
           return (
             <Box key={a.alertId} style={{ marginTop: '10px', opacity: a.isActive ? 1 : 0.5 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/games/${a.gameId}`)}>
                   {a.gameName}
                 </div>
-                <div>목표가 {a.targetPrice?.toLocaleString()}원</div>
+                <div>할인 시작 {a.discountStartEnabled ? 'ON' : 'OFF'}</div>
+                <div>
+                  지정 할인율{' '}
+                  {a.targetDiscountEnabled
+                    ? `${a.discountRate}% · 목표가 ${a.targetPrice?.toLocaleString()}원`
+                    : 'OFF'}
+                </div>
                 <div>
                   현재 {a.currentPrice?.toLocaleString()}원 {a.isActive && reached ? '✅ 도달' : ''}
                 </div>
@@ -134,6 +143,9 @@ export default function NotificationsPage() {
 
               {editingId === a.alertId && (
                 <AlertForm
+                  initialDiscountStartEnabled={a.discountStartEnabled}
+                  initialTargetDiscountEnabled={a.targetDiscountEnabled}
+                  initialRate={a.discountRate ?? 30}
                   onSubmit={(payload) => handleEdit(a.alertId, payload)}
                   onCancel={() => setEditingId(null)}
                 />
