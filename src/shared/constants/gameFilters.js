@@ -36,6 +36,9 @@ export const DEFAULT_FILTERS = {
 // BE GameService.SEARCH_MIN_KEYWORD_LENGTH와 동일 기준 (1글자 검색은 결과가 너무 많아 느려짐)
 export const SEARCH_MIN_KEYWORD_LENGTH = 2
 
+// 검색 자동완성 드롭다운에 보여줄 최대 개수 (스팀 검색창과 동일하게 소수만 보여주고 나머지는 "전체 보기"로 유도)
+export const SEARCH_SUGGESTION_LIMIT = 5
+
 // draftFilters(입력 중인 값, 문자열 포함) -> BE로 보낼 형태(숫자 변환)로 정리
 export function normalizeFiltersForRequest(draftFilters) {
   return {
