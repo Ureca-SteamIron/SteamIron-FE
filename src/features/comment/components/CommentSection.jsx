@@ -7,6 +7,7 @@ import {
   createComment,
   updateComment,
   deleteComment,
+  adminDeleteComment,
 } from '../api/commentApi'
 
 // 삭제된 댓글은 화면에서 완전히 제거 (children까지 함께 제거)
@@ -16,7 +17,7 @@ function filterDeleted(comments) {
     .map((c) => ({ ...c, children: filterDeleted(c.children ?? []) }))
 }
 
-function CommentItem({ comment, currentUserId, onReply, onUpdate, onDelete }) {
+function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDelete, onAdminDelete }) {
   const [replying, setReplying] = useState(false)
   const [editing, setEditing] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -50,6 +51,14 @@ function CommentItem({ comment, currentUserId, onReply, onUpdate, onDelete }) {
                 삭제
               </span>
             </>
+          )}
+          {!isMine && isAdmin && (
+            <span
+              style={{ cursor: 'pointer', color: '#e74c3c' }}
+              onClick={() => onAdminDelete(comment.id)}
+            >
+              삭제(관리자)
+            </span>
           )}
         </div>
 
@@ -113,9 +122,11 @@ function CommentItem({ comment, currentUserId, onReply, onUpdate, onDelete }) {
             key={child.id}
             comment={child}
             currentUserId={currentUserId}
+            isAdmin={isAdmin}
             onReply={onReply}
             onUpdate={onUpdate}
             onDelete={onDelete}
+            onAdminDelete={onAdminDelete}
           />
         ))}
     </div>
@@ -124,6 +135,7 @@ function CommentItem({ comment, currentUserId, onReply, onUpdate, onDelete }) {
 
 export default function CommentSection({ gameId }) {
   const user = getSession()
+  const isAdmin = user?.role === 'ADMIN'
 
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -175,6 +187,13 @@ export default function CommentSection({ gameId }) {
       .catch((err) => setError(err.response?.data?.message ?? err.message))
   }
 
+  const handleAdminDelete = (commentId) => {
+    if (!window.confirm('관리자 권한으로 이 댓글을 삭제하시겠습니까?')) return
+    adminDeleteComment(commentId)
+      .then(loadComments)
+      .catch((err) => setError(err.response?.data?.message ?? err.message))
+  }
+
   return (
     <Box style={{ marginTop: '20px' }}>
       <div>커뮤니티 (댓글 / 대댓글)</div>
@@ -188,9 +207,11 @@ export default function CommentSection({ gameId }) {
             key={comment.id}
             comment={comment}
             currentUserId={user?.userId}
+            isAdmin={isAdmin}
             onReply={handleReply}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            onAdminDelete={handleAdminDelete}
           />
         ))}
 
