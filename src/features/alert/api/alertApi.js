@@ -10,7 +10,7 @@ export async function getMyAlerts() {
   return data.data ?? []
 }
 
-// 알림 생성 — payload: { alertType: 'RATE' | 'ANY', discountRate: number | null }
+// 알림 생성 — payload: { discountStartEnabled, targetDiscountEnabled, discountRate }
 export async function createAlert(gameId, payload) {
   const { data } = await axiosClient.post(`/api/v1/games/${gameId}/alerts`, payload)
   if (!data.success) throw new Error(data.message ?? '알림 설정 실패')
@@ -26,4 +26,10 @@ export async function updateAlert(alertId, payload) {
 export async function setAlertActive(alertId, active) {
   const { data } = await axiosClient.patch(`/api/v1/alerts/${alertId}/active`, { active })
   if (!data.success) throw new Error(data.message ?? '알림 상태 변경 실패')
+}
+
+// 종 알림 OFF — 이 게임의 저장된 알림 조건과 목표가를 모두 삭제
+export async function deleteAlert(alertId) {
+  const { data } = await axiosClient.delete(`/api/v1/alerts/${alertId}`)
+  if (!data.success) throw new Error(data.message ?? '알림 설정 삭제 실패')
 }
