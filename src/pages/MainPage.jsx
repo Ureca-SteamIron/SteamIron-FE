@@ -25,19 +25,17 @@ function getPageNumbers(currentPage, totalPages, groupSize = PAGE_GROUP_SIZE) {
   return { pages, start, end }
 }
 
-// 메인: 검색 / login(discord)·마이페이지 / top100·MY 탭(화면 전환 없이 목록만 교체) / 정렬 / 필터
 export default function MainPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // URL에서 초기값 읽기 (없으면 기본값)
-  const [tab, setTabState] = useState(searchParams.get('tab') || 'top100')
-  const [sort, setSortState] = useState(searchParams.get('sort') || 'popular')
-  const [allGamesPage, setAllGamesPageState] = useState(Number(searchParams.get('page')) || 1)
+  // ===== URL을 단일 소스로 사용 (파생값, useState 없음) =====
+  const tab = searchParams.get('tab') || 'top100'
+  const sort = searchParams.get('sort') || 'popular'
+  const allGamesPage = Number(searchParams.get('page')) || 1
 
-  // 상태 변경 + URL 반영을 함께 처리하는 wrapper
+  // 탭 변경: page는 유지하지 않고 초기화할 필요 없음(탭별로 별도 페이지 개념)
   const setTab = (newTab) => {
-    setTabState(newTab)
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.set('tab', newTab)
@@ -45,56 +43,51 @@ export default function MainPage() {
     })
   }
 
+  // 정렬 변경 시 page를 함께 1로 리셋 → 별도 useEffect 불필요
   const setSort = (newSort) => {
-    setSortState(newSort)
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.set('sort', newSort)
+      next.set('page', '1')
       return next
     })
   }
 
+  // 페이지 변경: 항상 최신 URL 기준으로 계산 (클로저 문제 없음)
   const setAllGamesPage = (updater, options = {}) => {
-    const nextPage = typeof updater === 'function' ? updater(allGamesPage) : updater
-    setAllGamesPageState(nextPage)
-    setSearchParams((sp) => {
-      const next = new URLSearchParams(sp)
+    setSearchParams((prev) => {
+      const currentPage = Number(prev.get('page')) || 1
+      const nextPage = typeof updater === 'function' ? updater(currentPage) : updater
+      const next = new URLSearchParams(prev)
       next.set('page', String(nextPage))
       return next
     }, options)
   }
 
-  useEffect(() => {
-    setTabState(searchParams.get('tab') || 'top100')
-    setSortState(searchParams.get('sort') || 'popular')
-    setAllGamesPageState(Number(searchParams.get('page')) || 1)
-  }, [searchParams])
-
-  // 로그인 세션(토큰+유저정보). 있으면 login 자리에 프사/이름 표시. 새로고침해도 유지됨
   const user = getSession()
 
-  // 정렬은 선택 즉시 적용. 필터(장르/가격/할인)는 값을 모아뒀다가 "적용" 버튼으로 한번에 반영
+  // 필터: draft(임시) / applied(적용) 구분은 그대로 유지
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS)
 
+  // 필터 적용 시 page도 함께 1로 리셋 (한 번의 setSearchParams로 처리)
   const handleApplyFilters = () => {
-    setAppliedFilters(normalizeFiltersForRequest(draftFilters))
-    // setAllGamesPage(1) 호출 삭제 — 아래 useEffect가 처리
+    const normalized = normalizeFiltersForRequest(draftFilters)
+    setAppliedFilters(normalized)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('page', '1')
+      return next
+    })
   }
 
-  // 정렬/필터가 바뀌면 전체 게임 탭도 1페이지로 리셋
-  useEffect(() => {
-    setAllGamesPage(1, { replace: true })
-  }, [sort, appliedFilters])
-
-  // top100: /api/home 에서 로드 (로그인 여부와 무관한 공개 데이터). 정렬/필터가 바뀔 때마다 재조회
+  // ===== top100 =====
   const [topGames, setTopGames] = useState([])
   const [topGamesLoading, setTopGamesLoading] = useState(true)
   const [topGamesError, setTopGamesError] = useState(null)
 
   useEffect(() => {
     if (tab !== 'top100') return
-
     let cancelled = false
     setTopGamesLoading(true)
     setTopGamesError(null)
@@ -110,9 +103,7 @@ export default function MainPage() {
         if (!cancelled) setTopGamesLoading(false)
       })
 
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [tab, sort, appliedFilters])
 
   const tabStyle = (name) => ({
@@ -122,7 +113,7 @@ export default function MainPage() {
     textDecoration: tab === name ? 'underline' : 'none',
   })
 
-  // ===== 전체 게임 탭 상태 =====
+  // ===== 전체 게임 탭 =====
   const [allGames, setAllGames] = useState([])
   const [allGamesLoading, setAllGamesLoading] = useState(true)
   const [allGamesError, setAllGamesError] = useState(null)
@@ -130,7 +121,6 @@ export default function MainPage() {
 
   useEffect(() => {
     if (tab !== 'all') return
-
     let cancelled = false
     setAllGamesLoading(true)
     setAllGamesError(null)
@@ -148,19 +138,13 @@ export default function MainPage() {
         if (!cancelled) setAllGamesLoading(false)
       })
 
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [tab, sort, appliedFilters, allGamesPage])
 
-
-
-  // 찜 목록: /api/users/me/wishlist 에서 로드 (로그인 필요)
+  // ===== 찜 목록 =====
   const [wishlist, setWishlist] = useState([])
   const [wishlistLoading, setWishlistLoading] = useState(true)
   const [wishlistError, setWishlistError] = useState(null)
-
-  // 찜 여부 판단용 id Set. top100에서도 하트 상태를 보여주기 위해 로그인 시 항상 로드해둔다
   const [wishlistIds, setWishlistIds] = useState(new Set())
   const { pendingIds, toggleWishlist } = useWishlistToggle(wishlistIds, setWishlistIds)
 
@@ -183,12 +167,9 @@ export default function MainPage() {
         if (!cancelled) setWishlistLoading(false)
       })
 
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }
 
-  // 로그인 상태면 최초 진입 시 찜 목록/ID를 미리 로드 (top100에서도 하트 표시가 필요하므로)
   useEffect(() => {
     if (!user) return
     const cancel = loadWishlist()
@@ -196,7 +177,6 @@ export default function MainPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // MY 탭을 눌렀을 때도 최신 상태로 재조회 (top100과 동일한 패턴 유지)
   useEffect(() => {
     if (tab !== 'my') return
     if (!user) return
@@ -208,7 +188,6 @@ export default function MainPage() {
   const renderGameRow = (game) => {
     const liked = wishlistIds.has(game.appId)
     const isPending = pendingIds.has(game.appId)
-
     const originalPrice = game.originalPrice ?? 0
     const finalPrice = game.finalPrice ?? 0
 
@@ -219,11 +198,7 @@ export default function MainPage() {
         style={{ display: 'flex', alignItems: 'center', gap: '30px', marginBottom: '10px' }}
       >
         <Box style={{ width: '120px', height: '50px', padding: 0, overflow: 'hidden' }}>
-          <img
-            src={game.headerImage}
-            alt={game.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          <img src={game.headerImage} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </Box>
         <div style={{ flex: 1, textAlign: 'center' }}>
           {finalPrice === 0 ? (
@@ -252,11 +227,7 @@ export default function MainPage() {
         >
           {game.name}
         </div>
-        <WishlistHeartButton
-          liked={liked}
-          disabled={isPending}
-          onClick={(e) => toggleWishlist(e, game)}
-        />
+        <WishlistHeartButton liked={liked} disabled={isPending} onClick={(e) => toggleWishlist(e, game)} />
       </Box>
     )
   }
@@ -265,19 +236,12 @@ export default function MainPage() {
     <div style={{ padding: '20px' }}>
       <SearchTopBar />
 
-      {/* 탭: 전체게임 / top100 / MY — 클릭하면 아래 목록만 교체 */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
         <Box style={{ display: 'flex', padding: 0 }}>
-          <div
-            style={{ ...tabStyle('all'), borderRight: '2px solid black' }}
-            onClick={() => setTab('all')}
-          >
+          <div style={{ ...tabStyle('all'), borderRight: '2px solid black' }} onClick={() => setTab('all')}>
             전체 게임
           </div>
-          <div
-            style={{ ...tabStyle('top100'), borderRight: '2px solid black' }}
-            onClick={() => setTab('top100')}
-          >
+          <div style={{ ...tabStyle('top100'), borderRight: '2px solid black' }} onClick={() => setTab('top100')}>
             top100
           </div>
           <div style={tabStyle('my')} onClick={() => setTab('my')}>
@@ -287,7 +251,6 @@ export default function MainPage() {
       </div>
 
       <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
-        {/* 목록 영역 — 탭에 따라 내용 교체 */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
             <SortDropdown value={sort} onChange={setSort} />
@@ -322,21 +285,13 @@ export default function MainPage() {
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '20px' }}>
                     <Box
                       onClick={() => !isFirstPage && setAllGamesPage(1)}
-                      style={{
-                        cursor: isFirstPage ? 'default' : 'pointer',
-                        opacity: isFirstPage ? 0.4 : 1,
-                        padding: '6px 10px',
-                      }}
+                      style={{ cursor: isFirstPage ? 'default' : 'pointer', opacity: isFirstPage ? 0.4 : 1, padding: '6px 10px' }}
                     >
                       {'<<'}
                     </Box>
                     <Box
                       onClick={() => !isFirstPage && setAllGamesPage((p) => Math.max(1, p - 1))}
-                      style={{
-                        cursor: isFirstPage ? 'default' : 'pointer',
-                        opacity: isFirstPage ? 0.4 : 1,
-                        padding: '6px 10px',
-                      }}
+                      style={{ cursor: isFirstPage ? 'default' : 'pointer', opacity: isFirstPage ? 0.4 : 1, padding: '6px 10px' }}
                     >
                       {'<'}
                     </Box>
@@ -358,21 +313,13 @@ export default function MainPage() {
 
                     <Box
                       onClick={() => !isLastPage && setAllGamesPage((p) => Math.min(allGamesTotalPages, p + 1))}
-                      style={{
-                        cursor: isLastPage ? 'default' : 'pointer',
-                        opacity: isLastPage ? 0.4 : 1,
-                        padding: '6px 10px',
-                      }}
+                      style={{ cursor: isLastPage ? 'default' : 'pointer', opacity: isLastPage ? 0.4 : 1, padding: '6px 10px' }}
                     >
                       {'>'}
                     </Box>
                     <Box
                       onClick={() => !isLastPage && setAllGamesPage(Math.min(allGamesTotalPages, end + 1))}
-                      style={{
-                        cursor: isLastPage ? 'default' : 'pointer',
-                        opacity: isLastPage ? 0.4 : 1,
-                        padding: '6px 10px',
-                      }}
+                      style={{ cursor: isLastPage ? 'default' : 'pointer', opacity: isLastPage ? 0.4 : 1, padding: '6px 10px' }}
                     >
                       {'>>'}
                     </Box>
@@ -384,7 +331,6 @@ export default function MainPage() {
 
           {tab === 'my' && (
             <>
-              {/* MY 탭: 찜 목록 로딩/에러/빈 목록/실제 데이터 렌더링 (top100과 동일한 상태 처리 패턴) */}
               {wishlistLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
               {wishlistError && <Box style={{ marginBottom: '10px' }}>에러: {wishlistError}</Box>}
               {!wishlistLoading && !wishlistError && wishlist.length === 0 && (
