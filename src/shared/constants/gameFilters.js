@@ -20,8 +20,8 @@ export const SORT_OPTIONS = [
   { value: 'price_asc', label: '낮은 가격순' },
   { value: 'price_desc', label: '높은 가격순' },
   { value: 'discount_desc', label: '할인율 높은순' },
-  { value: 'name_asc', label: '이름순 (A-Z)' },
-  { value: 'name_desc', label: '이름 역순 (Z-A)' },
+  { value: 'name_asc', label: '이름순 (가-Z)' },
+  { value: 'name_desc', label: '이름 역순 (Z-가)' },
 ]
 
 export const DEFAULT_FILTERS = {
