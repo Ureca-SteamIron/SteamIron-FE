@@ -5,6 +5,7 @@ import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
 import { createAlert } from '../features/alert/api/alertApi'
 import AlertForm from '../features/alert/components/AlertForm'
 import { getSession } from '../shared/utils/auth'
+import CommentSection from '../features/comment/components/CommentSection'
 
 const REFRESH_COOLDOWN_MS = 10 * 60 * 1000 // 10분
 const REFRESH_STORAGE_KEY = 'steamiron.lastRefreshAt'
@@ -213,12 +214,7 @@ export default function GameDetailPage() {
             {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
           </Box>
 
-          <Box style={{ marginTop: '20px' }}>
-            <div>커뮤니티 (댓글 / 대댓글)</div>
-            <Box style={{ marginTop: '10px' }}>댓글 1</Box>
-            <Box style={{ marginTop: '10px' }}>댓글 2</Box>
-            <Box style={{ marginTop: '10px' }}>댓글 입력</Box>
-          </Box>
+          <CommentSection gameId={gameId} />
         </>
       )}
     </div>
