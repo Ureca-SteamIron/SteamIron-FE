@@ -59,7 +59,7 @@ export default function SearchResultPage() {
       .then((data) => {
         if (!cancelled) setWishlistIds(new Set(data.map((g) => g.appId)))
       })
-      .catch(() => {})
+      .catch(() => { })
     return () => {
       cancelled = true
     }
@@ -130,6 +130,8 @@ export default function SearchResultPage() {
   const renderGameRow = (game) => {
     const liked = wishlistIds.has(game.appId)
     const isPending = pendingIds.has(game.appId)
+    const originalPrice = game.originalPrice ?? 0
+    const finalPrice = game.finalPrice ?? 0
 
     return (
       <Box
@@ -145,16 +147,18 @@ export default function SearchResultPage() {
           />
         </Box>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          {game.discountPercent > 0 ? (
+          {game.isFree ? (
+            <span>무료</span>
+          ) : game.discountPercent > 0 ? (
             <>
               <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
-                {game.originalPrice.toLocaleString()}원
+                {originalPrice.toLocaleString()}원
               </span>
               <span>-{game.discountPercent}%</span>{' '}
-              <span>{game.finalPrice.toLocaleString()}원</span>
+              <span>{finalPrice.toLocaleString()}원</span>
             </>
           ) : (
-            <span>{game.finalPrice.toLocaleString()}원</span>
+            <span>{finalPrice.toLocaleString()}원</span>
           )}
         </div>
         <div
