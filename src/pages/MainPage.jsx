@@ -34,7 +34,6 @@ export default function MainPage() {
   const sort = searchParams.get('sort') || 'popular'
   const allGamesPage = Number(searchParams.get('page')) || 1
 
-  // 탭 변경: page는 유지하지 않고 초기화할 필요 없음(탭별로 별도 페이지 개념)
   const setTab = (newTab) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -43,7 +42,6 @@ export default function MainPage() {
     })
   }
 
-  // 정렬 변경 시 page를 함께 1로 리셋 → 별도 useEffect 불필요
   const setSort = (newSort) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -53,7 +51,6 @@ export default function MainPage() {
     })
   }
 
-  // 페이지 변경: 항상 최신 URL 기준으로 계산 (클로저 문제 없음)
   const setAllGamesPage = (updater, options = {}) => {
     setSearchParams((prev) => {
       const currentPage = Number(prev.get('page')) || 1
@@ -66,11 +63,9 @@ export default function MainPage() {
 
   const user = getSession()
 
-  // 필터: draft(임시) / applied(적용) 구분은 그대로 유지
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS)
 
-  // 필터 적용 시 page도 함께 1로 리셋 (한 번의 setSearchParams로 처리)
   const handleApplyFilters = () => {
     const normalized = normalizeFiltersForRequest(draftFilters)
     setAppliedFilters(normalized)
@@ -105,13 +100,6 @@ export default function MainPage() {
 
     return () => { cancelled = true }
   }, [tab, sort, appliedFilters])
-
-  const tabStyle = (name) => ({
-    padding: '10px 20px',
-    cursor: 'pointer',
-    fontWeight: tab === name ? 'bold' : 'normal',
-    textDecoration: tab === name ? 'underline' : 'none',
-  })
 
   // ===== 전체 게임 탭 =====
   const [allGames, setAllGames] = useState([])
@@ -195,45 +183,41 @@ export default function MainPage() {
       <Box
         key={game.appId}
         onClick={() => navigate(`/games/${game.appId}`)}
-        style={{ display: 'flex', alignItems: 'center', gap: '30px', marginBottom: '10px' }}
+        className="flex items-center gap-6 mb-2.5 p-3 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
       >
-        <Box style={{ width: '120px', height: '50px', padding: 0, overflow: 'hidden' }}>
-          <img src={game.headerImage} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </Box>
-        <div style={{ flex: 1, textAlign: 'center' }}>
+        <div className="w-[120px] h-[64px] rounded-lg overflow-hidden flex-shrink-0 bg-black">
+          <img src={game.headerImage} alt={game.name} className="w-full h-full object-cover" />
+        </div>
+
+        <div className="flex-1 flex items-center justify-center gap-2 text-sm">
           {game.discountPercent > 0 ? (
             <>
-              <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
+              <span className="line-through text-[#7a7a82]">
                 {originalPrice.toLocaleString()}원
               </span>
-              <span>-{game.discountPercent}%</span>{' '}
-              <span>{finalPrice.toLocaleString()}원</span>
+              <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
+              <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
             </>
           ) : game.isFree ? (
-            <span>무료</span>
+            <span className="text-green-400 font-semibold">무료</span>
           ) : (
-            <span>{finalPrice.toLocaleString()}원</span>
+            <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
           )}
         </div>
+
         <div
-          style={{
-            width: NAME_COLUMN_WIDTH,
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
+          className="text-right whitespace-nowrap overflow-hidden text-ellipsis text-[#f2f2f4] font-medium"
+          style={{ width: NAME_COLUMN_WIDTH }}
           title={game.name}
         >
           {game.name}
         </div>
+
         <WishlistHeartButton liked={liked} disabled={isPending} onClick={(e) => toggleWishlist(e, game)} />
       </Box>
     )
   }
 
-  // 찜 목록 정렬, 필터링, 페이지네이션은 모두 프론트엔드에서 처리
-  // 이름순 그룹 우선순위: 한글 → 영어 → 기타 (백엔드 GameNameSort와 동일한 규칙)
   function nameGroup(name) {
     const ch = name?.[0] ?? ''
     if (/[가-힣]/.test(ch)) return 0
@@ -261,7 +245,11 @@ export default function MainPage() {
       if (filters.minDiscount && discountPercent < Number(filters.minDiscount)) return false
       if (filters.sale && discountPercent <= 0) return false
 
-      // 장르 필터는 GameSimpleResponse에 genre 정보가 없어 현재 적용 불가
+      if (filters.genre && filters.genre !== 'all') {
+        const genres = g.genres ?? []
+        if (!genres.includes(filters.genre)) return false
+      }
+
       return true
     })
   }
@@ -284,146 +272,137 @@ export default function MainPage() {
     }
   }
 
-  function applyWishlistFilters(games, filters) {
-    return games.filter((g) => {
-      const finalPrice = g.finalPrice ?? 0
-      const discountPercent = g.discountPercent ?? 0
-
-      if (filters.priceType === 'free' && !g.isFree) return false
-      if (filters.priceType === 'paid' && g.isFree) return false
-
-      if (filters.minPrice !== undefined && filters.minPrice !== '' && finalPrice < Number(filters.minPrice)) return false
-      if (filters.maxPrice !== undefined && filters.maxPrice !== '' && finalPrice > Number(filters.maxPrice)) return false
-
-      if (filters.minDiscount && discountPercent < Number(filters.minDiscount)) return false
-      if (filters.sale && discountPercent <= 0) return false
-
-      if (filters.genre && filters.genre !== 'all') {
-        const genres = g.genres ?? []
-        if (!genres.includes(filters.genre)) return false
-      }
-
-      return true
-    })
-  }
-
   const displayedWishlist = useMemo(() => {
     const filtered = applyWishlistFilters(wishlist, appliedFilters)
     return applyWishlistSort(filtered, sort)
   }, [wishlist, appliedFilters, sort])
 
+  const tabClass = (name) =>
+    `px-6 py-2.5 cursor-pointer text-sm transition-colors duration-150 ${tab === name
+      ? 'font-bold text-white border-b-2 border-green-400'
+      : 'font-normal text-[#9a9aa2] border-b-2 border-transparent hover:text-[#e8e8ea]'
+    }`
+
+  const pageButtonClass = (disabled) =>
+    `px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${disabled
+      ? 'cursor-default opacity-30 text-[#9a9aa2]'
+      : 'cursor-pointer text-[#e8e8ea] hover:bg-[#2a2a31]'
+    }`
+
+  const stateBoxClass = 'mb-2.5 p-4 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-center text-[#9a9aa2] text-sm'
+
   return (
-    <div style={{ padding: '20px' }}>
-      <SearchTopBar />
+    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea]">
+      <div className="max-w-[1400px] mx-auto p-5">
+        <SearchTopBar />
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
-        <Box style={{ display: 'flex', padding: 0 }}>
-          <div style={{ ...tabStyle('all'), borderRight: '2px solid black' }} onClick={() => setTab('all')}>
-            전체 게임
+        <div className="flex justify-center mt-8">
+          <div className="flex gap-1 border-b border-[#2c2c33]">
+            <div className={tabClass('all')} onClick={() => setTab('all')}>
+              전체 게임
+            </div>
+            <div className={tabClass('top100')} onClick={() => setTab('top100')}>
+              top100
+            </div>
+            <div className={tabClass('my')} onClick={() => setTab('my')}>
+              MY
+            </div>
           </div>
-          <div style={{ ...tabStyle('top100'), borderRight: '2px solid black' }} onClick={() => setTab('top100')}>
-            top100
-          </div>
-          <div style={tabStyle('my')} onClick={() => setTab('my')}>
-            MY
-          </div>
-        </Box>
-      </div>
-
-      <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-            <SortDropdown value={sort} onChange={setSort} hidePopularLabel={tab !== 'top100'} />
-          </div>
-
-          {tab === 'top100' && (
-            <>
-              {topGamesLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
-              {topGamesError && <Box style={{ marginBottom: '10px' }}>에러: {topGamesError}</Box>}
-              {!topGamesLoading && !topGamesError && topGames.length === 0 && (
-                <Box style={{ marginBottom: '10px' }}>표시할 게임이 없습니다</Box>
-              )}
-              {topGames.map(renderGameRow)}
-            </>
-          )}
-
-          {tab === 'all' && (
-            <>
-              {allGamesLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
-              {allGamesError && <Box style={{ marginBottom: '10px' }}>에러: {allGamesError}</Box>}
-              {!allGamesLoading && !allGamesError && allGames.length === 0 && (
-                <Box style={{ marginBottom: '10px' }}>표시할 게임이 없습니다</Box>
-              )}
-              {allGames.map(renderGameRow)}
-
-              {!allGamesLoading && !allGamesError && allGamesTotalPages > 0 && (() => {
-                const { pages, end } = getPageNumbers(allGamesPage, allGamesTotalPages)
-                const isFirstPage = allGamesPage === 1
-                const isLastPage = allGamesPage === allGamesTotalPages
-
-                return (
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '20px' }}>
-                    <Box
-                      onClick={() => !isFirstPage && setAllGamesPage(1)}
-                      style={{ cursor: isFirstPage ? 'default' : 'pointer', opacity: isFirstPage ? 0.4 : 1, padding: '6px 10px' }}
-                    >
-                      {'<<'}
-                    </Box>
-                    <Box
-                      onClick={() => !isFirstPage && setAllGamesPage((p) => Math.max(1, p - 1))}
-                      style={{ cursor: isFirstPage ? 'default' : 'pointer', opacity: isFirstPage ? 0.4 : 1, padding: '6px 10px' }}
-                    >
-                      {'<'}
-                    </Box>
-
-                    {pages.map((p) => (
-                      <Box
-                        key={p}
-                        onClick={() => setAllGamesPage(p)}
-                        style={{
-                          cursor: 'pointer',
-                          padding: '6px 10px',
-                          fontWeight: p === allGamesPage ? 'bold' : 'normal',
-                          textDecoration: p === allGamesPage ? 'underline' : 'none',
-                        }}
-                      >
-                        {p}
-                      </Box>
-                    ))}
-
-                    <Box
-                      onClick={() => !isLastPage && setAllGamesPage((p) => Math.min(allGamesTotalPages, p + 1))}
-                      style={{ cursor: isLastPage ? 'default' : 'pointer', opacity: isLastPage ? 0.4 : 1, padding: '6px 10px' }}
-                    >
-                      {'>'}
-                    </Box>
-                    <Box
-                      onClick={() => !isLastPage && setAllGamesPage(Math.min(allGamesTotalPages, end + 1))}
-                      style={{ cursor: isLastPage ? 'default' : 'pointer', opacity: isLastPage ? 0.4 : 1, padding: '6px 10px' }}
-                    >
-                      {'>>'}
-                    </Box>
-                  </div>
-                )
-              })()}
-            </>
-          )}
-
-          {tab === 'my' && (
-            <>
-              {wishlistLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
-              {wishlistError && <Box style={{ marginBottom: '10px' }}>에러: {wishlistError}</Box>}
-              {!wishlistLoading && !wishlistError && displayedWishlist.length === 0 && (
-                <Box style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  찜한 게임이 없습니다
-                </Box>
-              )}
-              {displayedWishlist.map(renderGameRow)}
-            </>
-          )}
         </div>
 
-        <FilterPanel draftFilters={draftFilters} setDraftFilters={setDraftFilters} onApply={handleApplyFilters} />
+        <div className="flex gap-8 mt-6">
+          <div className="flex-1">
+            <div className="flex justify-end mb-3">
+              <SortDropdown value={sort} onChange={setSort} hidePopularLabel={tab !== 'top100'} />
+            </div>
+
+            {tab === 'top100' && (
+              <>
+                {topGamesLoading && <div className={stateBoxClass}>불러오는 중...</div>}
+                {topGamesError && <div className={`${stateBoxClass} text-red-400`}>에러: {topGamesError}</div>}
+                {!topGamesLoading && !topGamesError && topGames.length === 0 && (
+                  <div className={stateBoxClass}>표시할 게임이 없습니다</div>
+                )}
+                {topGames.map(renderGameRow)}
+              </>
+            )}
+
+            {tab === 'all' && (
+              <>
+                {allGamesLoading && <div className={stateBoxClass}>불러오는 중...</div>}
+                {allGamesError && <div className={`${stateBoxClass} text-red-400`}>에러: {allGamesError}</div>}
+                {!allGamesLoading && !allGamesError && allGames.length === 0 && (
+                  <div className={stateBoxClass}>표시할 게임이 없습니다</div>
+                )}
+                {allGames.map(renderGameRow)}
+
+                {!allGamesLoading && !allGamesError && allGamesTotalPages > 0 && (() => {
+                  const { pages, end } = getPageNumbers(allGamesPage, allGamesTotalPages)
+                  const isFirstPage = allGamesPage === 1
+                  const isLastPage = allGamesPage === allGamesTotalPages
+
+                  return (
+                    <div className="flex justify-center gap-1.5 mt-6">
+                      <div
+                        onClick={() => !isFirstPage && setAllGamesPage(1)}
+                        className={pageButtonClass(isFirstPage)}
+                      >
+                        {'<<'}
+                      </div>
+                      <div
+                        onClick={() => !isFirstPage && setAllGamesPage((p) => Math.max(1, p - 1))}
+                        className={pageButtonClass(isFirstPage)}
+                      >
+                        {'<'}
+                      </div>
+
+                      {pages.map((p) => (
+                        <div
+                          key={p}
+                          onClick={() => setAllGamesPage(p)}
+                          className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-colors duration-150 ${p === allGamesPage
+                            ? 'font-bold text-white bg-[#2a2a31]'
+                            : 'font-normal text-[#9a9aa2] hover:bg-[#2a2a31] hover:text-[#e8e8ea]'
+                            }`}
+                        >
+                          {p}
+                        </div>
+                      ))}
+
+                      <div
+                        onClick={() => !isLastPage && setAllGamesPage((p) => Math.min(allGamesTotalPages, p + 1))}
+                        className={pageButtonClass(isLastPage)}
+                      >
+                        {'>'}
+                      </div>
+                      <div
+                        onClick={() => !isLastPage && setAllGamesPage(Math.min(allGamesTotalPages, end + 1))}
+                        className={pageButtonClass(isLastPage)}
+                      >
+                        {'>>'}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </>
+            )}
+
+            {tab === 'my' && (
+              <>
+                {wishlistLoading && <div className={stateBoxClass}>불러오는 중...</div>}
+                {wishlistError && <div className={`${stateBoxClass} text-red-400`}>에러: {wishlistError}</div>}
+                {!wishlistLoading && !wishlistError && displayedWishlist.length === 0 && (
+                  <div className="h-[300px] flex items-center justify-center rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-[#9a9aa2] text-sm">
+                    찜한 게임이 없습니다
+                  </div>
+                )}
+                {displayedWishlist.map(renderGameRow)}
+              </>
+            )}
+          </div>
+
+          <FilterPanel draftFilters={draftFilters} setDraftFilters={setDraftFilters} onApply={handleApplyFilters} />
+        </div>
       </div>
     </div>
   )

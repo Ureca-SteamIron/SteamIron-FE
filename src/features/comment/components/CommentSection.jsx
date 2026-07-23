@@ -17,6 +17,9 @@ function filterDeleted(comments) {
     .map((c) => ({ ...c, children: filterDeleted(c.children ?? []) }))
 }
 
+const textareaClass =
+  'w-full resize-vertical font-[inherit] bg-[#26262c] text-[#e8e8ea] text-sm rounded-lg border border-[#2c2c33] px-3 py-2.5 outline-none placeholder:text-[#7a7a82] focus:border-[#4a4a52]'
+
 function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDelete, onAdminDelete }) {
   const [replying, setReplying] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -28,33 +31,47 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
   const replyCount = comment.children?.length ?? 0
 
   return (
-    <div style={{ marginLeft: comment.depth * 24 }}>
-      <Box style={{ marginTop: '10px' }}>
-        <div style={{ fontWeight: 'bold' }}>{comment.nickname}</div>
-        <div>{comment.content}</div>
-        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+    <div
+      className={comment.depth > 0 ? 'pl-6 border-l border-[#2c2c33]' : ''}
+      style={{ marginLeft: comment.depth * 24 }}
+    >
+      <div className="mt-2.5 p-3.5 rounded-xl border border-[#2c2c33] bg-[#1b1b1f]">
+        <div className="font-bold text-sm text-[#f2f2f4]">{comment.nickname}</div>
+        <div className="mt-1 text-sm text-[#e8e8ea] whitespace-pre-wrap break-words">
+          {comment.content}
+        </div>
+        <div className="text-xs text-[#7a7a82] mt-1.5">
           {new Date(comment.createdAt).toLocaleString()}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+        <div className="flex gap-3 mt-2 text-xs">
           {currentUserId && comment.depth === 0 && (
-            <span style={{ cursor: 'pointer' }} onClick={() => setReplying((v) => !v)}>
+            <span
+              className="cursor-pointer text-[#9a9aa2] transition-colors duration-150 hover:text-[#e8e8ea]"
+              onClick={() => setReplying((v) => !v)}
+            >
               답글
             </span>
           )}
           {isMine && (
             <>
-              <span style={{ cursor: 'pointer' }} onClick={() => setEditing((v) => !v)}>
+              <span
+                className="cursor-pointer text-[#9a9aa2] transition-colors duration-150 hover:text-[#e8e8ea]"
+                onClick={() => setEditing((v) => !v)}
+              >
                 수정
               </span>
-              <span style={{ cursor: 'pointer' }} onClick={() => onDelete(comment.id)}>
+              <span
+                className="cursor-pointer text-[#9a9aa2] transition-colors duration-150 hover:text-red-400"
+                onClick={() => onDelete(comment.id)}
+              >
                 삭제
               </span>
             </>
           )}
           {!isMine && isAdmin && (
             <span
-              style={{ cursor: 'pointer', color: '#e74c3c' }}
+              className="cursor-pointer text-red-400 transition-colors duration-150 hover:text-red-300"
               onClick={() => onAdminDelete(comment.id)}
             >
               삭제(관리자)
@@ -63,35 +80,35 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
         </div>
 
         {editing && (
-          <div style={{ marginTop: '8px' }}>
+          <div className="mt-2.5">
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               rows={2}
-              style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
+              className={textareaClass}
             />
-            <Box
+            <div
               onClick={() => {
                 onUpdate(comment.id, editText)
                 setEditing(false)
               }}
-              style={{ display: 'inline-block', marginTop: '4px', cursor: 'pointer' }}
+              className="inline-block mt-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#0e0e10] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
             >
               저장
-            </Box>
+            </div>
           </div>
         )}
 
         {replying && (
-          <div style={{ marginTop: '8px' }}>
+          <div className="mt-2.5">
             <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="답글을 입력하세요"
               rows={2}
-              style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
+              className={textareaClass}
             />
-            <Box
+            <div
               onClick={() => {
                 if (!replyText.trim()) return
                 onReply(comment.id, replyText)
@@ -99,22 +116,22 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
                 setReplying(false)
                 setExpanded(true)
               }}
-              style={{ display: 'inline-block', marginTop: '4px', cursor: 'pointer' }}
+              className="inline-block mt-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#0e0e10] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
             >
               등록
-            </Box>
+            </div>
           </div>
         )}
 
         {replyCount > 0 && (
           <div
-            style={{ marginTop: '8px', cursor: 'pointer', color: '#3366cc' }}
+            className="mt-2.5 text-xs text-green-400 cursor-pointer transition-colors duration-150 hover:text-green-300"
             onClick={() => setExpanded((v) => !v)}
           >
             {expanded ? '답글 숨기기' : `답글 ${replyCount}개 보기`}
           </div>
         )}
-      </Box>
+      </div>
 
       {expanded &&
         comment.children?.map((child) => (
@@ -195,11 +212,14 @@ export default function CommentSection({ gameId }) {
   }
 
   return (
-    <Box style={{ marginTop: '20px' }}>
-      <div>커뮤니티 (댓글 / 대댓글)</div>
+    <Box
+      noDefaultStyle
+      className="mt-6 p-5 rounded-xl border border-[#2c2c33] bg-[#1b1b1f]"
+    >
+      <div className="font-bold text-sm text-[#f2f2f4]">커뮤니티 (댓글 / 대댓글)</div>
 
-      {error && <div style={{ color: 'red', marginTop: '8px' }}>{error}</div>}
-      {loading && <div style={{ marginTop: '8px' }}>불러오는 중...</div>}
+      {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
+      {loading && <div className="text-[#9a9aa2] text-sm mt-2">불러오는 중...</div>}
 
       {!loading &&
         comments.map((comment) => (
@@ -216,23 +236,29 @@ export default function CommentSection({ gameId }) {
         ))}
 
       {user ? (
-        <div style={{ marginTop: '15px' }}>
+        <div className="mt-4">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="댓글을 입력하세요"
             rows={3}
-            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
+            className={textareaClass}
           />
-          <Box
+          <div
             onClick={handleSubmit}
-            style={{ display: 'inline-block', marginTop: '6px', cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.5 : 1 }}
+            className={`inline-block mt-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
+              submitting
+                ? 'cursor-default opacity-50 text-[#0e0e10] bg-green-400'
+                : 'cursor-pointer text-[#0e0e10] bg-green-400 hover:bg-green-300'
+            }`}
           >
             {submitting ? '등록 중...' : '등록'}
-          </Box>
+          </div>
         </div>
       ) : (
-        <Box style={{ marginTop: '15px', display: 'inline-block' }}>로그인 후 댓글을 작성할 수 있습니다.</Box>
+        <div className="mt-4 inline-block text-sm text-[#9a9aa2]">
+          로그인 후 댓글을 작성할 수 있습니다.
+        </div>
       )}
     </Box>
   )

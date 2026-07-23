@@ -17,7 +17,6 @@ import CommentSection from '../features/comment/components/CommentSection'
 const REFRESH_COOLDOWN_MS = 10 * 60 * 1000 // 10분
 const REFRESH_STORAGE_KEY = 'steamiron.lastRefreshAt'
 
-// 게임별 마지막 갱신 시각을 localStorage에서 읽어온다 (새로고침해도 쿨다운 유지)
 function getLastRefreshAt(gameId) {
   try {
     const raw = localStorage.getItem(REFRESH_STORAGE_KEY)
@@ -39,7 +38,6 @@ function setLastRefreshAt(gameId, timestamp) {
   }
 }
 
-// 상세페이지: 상세정보(썸네일/가격) / 가격 히스토리 차트 / AI 요약 / 커뮤니티(댓글)
 export default function GameDetailPage() {
   const navigate = useNavigate()
   const { gameId } = useParams()
@@ -51,7 +49,6 @@ export default function GameDetailPage() {
 
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState(null)
-  // 남은 쿨다운(초). 0이면 갱신 가능
   const [cooldownSec, setCooldownSec] = useState(0)
 
   const [showAlertForm, setShowAlertForm] = useState(false)
@@ -152,11 +149,9 @@ export default function GameDetailPage() {
     return () => {
       cancelled = true
     }
-    // 로그인 세션은 페이지 진입 시 결정되고, 게임이 바뀔 때 해당 게임의 알림만 다시 조회한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId])
 
-  // 남은 쿨다운을 계산해서 state에 반영 (초 단위, 0 이하면 0으로 클램프)
   const recalcCooldown = () => {
     const lastAt = getLastRefreshAt(gameId)
     if (!lastAt) {
@@ -167,7 +162,6 @@ export default function GameDetailPage() {
     setCooldownSec(remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0)
   }
 
-  // 게임 진입 시 쿨다운 상태 확인 + 1초마다 카운트다운 갱신
   useEffect(() => {
     recalcCooldown()
     const timer = setInterval(recalcCooldown, 1000)
@@ -229,157 +223,183 @@ export default function GameDetailPage() {
       ? `${Math.floor(cooldownSec / 60)}:${String(cooldownSec % 60).padStart(2, '0')} 후 가능`
       : '갱신'
 
+  const cardClass = 'rounded-xl border border-[#2c2c33] bg-[#1b1b1f]'
+  const linkButtonClass =
+    'inline-flex items-center gap-2 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]'
+
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box onClick={() => navigate('/')} style={{ display: 'inline-block' }}>
-          ← 메인으로
-        </Box>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Box
-            onClick={handleRefresh}
-            style={{
-              display: 'inline-block',
-              cursor: isRefreshDisabled ? 'default' : 'pointer',
-              opacity: isRefreshDisabled ? 0.5 : 1,
-            }}
-          >
-            {refreshLabel}
-          </Box>
-          <Box
-            onClick={handleOpenSteamStore}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <FaSteam size={20} />
-            <span>Steam Store</span>
-          </Box>
+    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea] overflow-x-hidden">
+      <div className="w-[1400px] max-w-full mx-auto p-5">
+        <div className="flex justify-between items-center">
+          <div onClick={() => navigate('/')} className={linkButtonClass}>
+            ← 메인으로
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div
+              onClick={handleRefresh}
+              className={`rounded-xl border px-4 py-2.5 text-sm transition-colors duration-150 ${
+                isRefreshDisabled
+                  ? 'cursor-default opacity-40 border-[#2c2c33] bg-[#1b1b1f] text-[#9a9aa2]'
+                  : 'cursor-pointer border-[#2c2c33] bg-[#1b1b1f] text-[#e8e8ea] hover:bg-[#22222a] hover:border-[#3a3a42]'
+              }`}
+            >
+              {refreshLabel}
+            </div>
+            <div onClick={handleOpenSteamStore} className={linkButtonClass}>
+              <FaSteam size={18} />
+              <span>Steam Store</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {refreshError && <Box style={{ marginTop: '10px' }}>갱신 실패: {refreshError}</Box>}
+        {refreshError && (
+          <div className={`${cardClass} mt-3 p-3 text-sm text-red-400`}>
+            갱신 실패: {refreshError}
+          </div>
+        )}
 
-      {loading && <Box style={{ marginTop: '20px' }}>불러오는 중...</Box>}
-      {error && <Box style={{ marginTop: '20px' }}>에러: {error}</Box>}
+        {loading && (
+          <div className={`${cardClass} mt-6 p-4 text-center text-sm text-[#9a9aa2]`}>
+            불러오는 중...
+          </div>
+        )}
+        {error && (
+          <div className={`${cardClass} mt-6 p-4 text-center text-sm text-red-400`}>
+            에러: {error}
+          </div>
+        )}
 
-      {!loading && !error && game && (
-        <>
-          <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-            <Box style={{ width: '300px', height: '180px', padding: 0, overflow: 'hidden' }}>
-              <img
-                src={game.headerImage}
-                alt={game.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </Box>
-            <Box style={{ flex: 1 }}>
-              <div>
-                {game.name} {game.isWishlisted ? '(찜함)' : ''}
+        {!loading && !error && game && (
+          <>
+            <div className="flex gap-6 mt-6">
+              <div className={`${cardClass} w-[320px] h-[190px] overflow-hidden flex-shrink-0`}>
+                <img
+                  src={game.headerImage}
+                  alt={game.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div>
-                {game.discountPercent > 0 ? (
-                  <>
-                    <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
-                      {game.originalPrice.toLocaleString()}원
+
+              <div className={`${cardClass} flex-1 min-w-0 p-5`}>
+                <div className="text-lg font-bold text-[#f2f2f4]">
+                  {game.name}
+                  {game.isWishlisted && (
+                    <span className="ml-2 text-sm font-normal text-green-400">(찜함)</span>
+                  )}
+                </div>
+
+                <div className="mt-2 text-sm">
+                  {game.discountPercent > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <span className="line-through text-[#7a7a82]">
+                        {game.originalPrice.toLocaleString()}원
+                      </span>
+                      <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
+                      <span className="text-[#f2f2f4] font-semibold">
+                        {game.finalPrice.toLocaleString()}원
+                      </span>
                     </span>
-                    <span>-{game.discountPercent}%</span>{' '}
-                    <span>{game.finalPrice.toLocaleString()}원</span>
-                  </>
-                ) : (
-                  <span>{game.finalPrice.toLocaleString()}원</span>
-                )}
-              </div>
-              {user ? (
-                <div style={{ marginTop: '10px' }}>
-                  {loadingAlert ? (
-                    <div>알림 설정을 불러오는 중...</div>
                   ) : (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <button
-                          type="button"
-                          onClick={handleBellToggle}
-                          disabled={togglingAlert}
-                          aria-label={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
-                          title={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
-                          style={{
-                            border: '2px solid black',
-                            background: 'transparent',
-                            color: 'inherit',
-                            padding: '9px 12px',
-                            cursor: togglingAlert ? 'default' : 'pointer',
-                            opacity: togglingAlert ? 0.5 : 1,
-                            fontSize: '24px',
-                            lineHeight: 1,
-                          }}
-                        >
-                          {isBellActive ? <FaBell /> : <FaBellSlash />}
-                        </button>
-                        <span>{isBellActive ? '가격 알림 ON' : '가격 알림 OFF'}</span>
+                    <span className="text-[#f2f2f4] font-semibold">
+                      {game.finalPrice.toLocaleString()}원
+                    </span>
+                  )}
+                </div>
+
+                {user ? (
+                  <div className="mt-4">
+                    {loadingAlert ? (
+                      <div className="text-sm text-[#9a9aa2]">알림 설정을 불러오는 중...</div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleBellToggle}
+                            disabled={togglingAlert}
+                            aria-label={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
+                            title={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
+                            className={`flex items-center justify-center rounded-xl border px-3.5 py-2.5 text-xl transition-colors duration-150 ${
+                              togglingAlert
+                                ? 'cursor-default opacity-40 border-[#2c2c33] text-[#9a9aa2]'
+                                : isBellActive
+                                  ? 'cursor-pointer border-green-400 text-green-400 hover:bg-green-400/10'
+                                  : 'cursor-pointer border-[#2c2c33] text-[#9a9aa2] hover:border-[#3a3a42] hover:text-[#e8e8ea]'
+                            }`}
+                          >
+                            {isBellActive ? <FaBell /> : <FaBellSlash />}
+                          </button>
+                          <span
+                            className={`text-sm font-medium ${
+                              isBellActive ? 'text-green-400' : 'text-[#9a9aa2]'
+                            }`}
+                          >
+                            {isBellActive ? '가격 알림 ON' : '가격 알림 OFF'}
+                          </span>
+
+                          {existingAlert?.isActive && !showAlertForm && (
+                            <div
+                              onClick={() => setShowAlertForm(true)}
+                              className="text-sm text-[#9a9aa2] cursor-pointer transition-colors duration-150 hover:text-[#e8e8ea] underline"
+                            >
+                              수정
+                            </div>
+                          )}
+                        </div>
 
                         {existingAlert?.isActive && !showAlertForm && (
-                          <Box
-                            onClick={() => setShowAlertForm(true)}
-                            style={{ display: 'inline-block', cursor: 'pointer' }}
-                          >
-                            수정
-                          </Box>
+                          <div className="mt-3 text-sm text-[#9a9aa2] space-y-1">
+                            <div>
+                              할인 시작 알림: {existingAlert.discountStartEnabled ? 'ON' : 'OFF'}
+                            </div>
+                            <div>
+                              지정 할인율 알림: {existingAlert.targetDiscountEnabled
+                                ? `${existingAlert.discountRate}% 이상 · 목표가 약 ${existingAlert.targetPrice?.toLocaleString()}원`
+                                : 'OFF'}
+                            </div>
+                          </div>
                         )}
-                      </div>
 
-                      {existingAlert?.isActive && !showAlertForm && (
-                        <div style={{ marginTop: '10px', color: '#777' }}>
-                          <div>
-                            할인 시작 알림: {existingAlert.discountStartEnabled ? 'ON' : 'OFF'}
+                        {isBellActive && showAlertForm && (
+                          <div className="mt-3">
+                            <AlertForm
+                              originalPrice={game.originalPrice}
+                              initialDiscountStartEnabled={existingAlert?.discountStartEnabled ?? false}
+                              initialTargetDiscountEnabled={existingAlert?.targetDiscountEnabled ?? true}
+                              initialRate={existingAlert?.discountRate ?? 30}
+                              submitting={savingAlert}
+                              onSubmit={handleSaveAlert}
+                              onCancel={() => setShowAlertForm(false)}
+                            />
                           </div>
-                          <div>
-                            지정 할인율 알림: {existingAlert.targetDiscountEnabled
-                              ? `${existingAlert.discountRate}% 이상 · 목표가 약 ${existingAlert.targetPrice?.toLocaleString()}원`
-                              : 'OFF'}
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </>
+                    )}
+                    {alertMsg && <div className="mt-2 text-sm text-[#9a9aa2]">{alertMsg}</div>}
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => navigate('/login')}
+                    className="inline-block mt-4 text-sm text-green-400 cursor-pointer transition-colors duration-150 hover:text-green-300 underline"
+                  >
+                    로그인하고 알림 설정
+                  </div>
+                )}
+              </div>
+            </div>
 
-                      {isBellActive && showAlertForm && (
-                        <AlertForm
-                          originalPrice={game.originalPrice}
-                          initialDiscountStartEnabled={existingAlert?.discountStartEnabled ?? false}
-                          initialTargetDiscountEnabled={existingAlert?.targetDiscountEnabled ?? true}
-                          initialRate={existingAlert?.discountRate ?? 30}
-                          submitting={savingAlert}
-                          onSubmit={handleSaveAlert}
-                          onCancel={() => setShowAlertForm(false)}
-                        />
-                      )}
-                    </>
-                  )}
-                  {alertMsg && <div style={{ marginTop: '8px' }}>{alertMsg}</div>}
-                </div>
-              ) : (
-                <Box
-                  onClick={() => navigate('/login')}
-                  style={{ display: 'inline-block', marginTop: '10px', cursor: 'pointer' }}
-                >
-                  로그인하고 알림 설정
-                </Box>
-              )}
-            </Box>
-          </div>
+            <div className={`${cardClass} h-[220px] mt-6 flex items-center justify-center text-sm text-[#9a9aa2]`}>
+              가격 변동 (할인) 차트
+            </div>
 
-          <Box style={{ height: '200px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            가격 변동 (할인) 차트
-          </Box>
+            <div className={`${cardClass} min-h-[120px] mt-6 flex items-center justify-center text-center text-sm text-[#e8e8ea] p-5`}>
+              {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
+            </div>
 
-          <Box style={{ height: '120px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
-          </Box>
-
-          <CommentSection gameId={gameId} />
-        </>
-      )}
+            <CommentSection gameId={gameId} />
+          </>
+        )}
+      </div>
     </div>
   )
 }

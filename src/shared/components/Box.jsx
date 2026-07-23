@@ -1,8 +1,9 @@
 // 와이어프레임용 공통 박스. 디자인 없음 — 검은 테두리와 배치만.
-export default function Box({ children, onClick, style }) {
+export default function Box({ children, onClick, style, className }) {
   return (
     <div
       onClick={onClick}
+      className={className}
       style={{
         border: '2px solid black',
         padding: '10px',

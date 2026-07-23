@@ -17,39 +17,20 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
   const suggestions = buildSuggestionList(games, similarGames)
 
   return (
-    <Box
-      style={{
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        marginTop: '8px',
-        zIndex: 10,
-        padding: '6px',
-        backgroundColor: '#1b1b1f',
-        borderRadius: '12px',
-        border: '1px solid #2c2c33',
-        boxShadow: '0 12px 28px rgba(0, 0, 0, 0.45)',
-        color: '#e8e8ea',
-        maxHeight: '480px',
-        overflowY: 'auto',
-      }}
-    >
+    <Box className="absolute top-full left-0 right-0 mt-2 z-10 p-1.5 bg-[#1b1b1f] rounded-xl border border-[#2c2c33] shadow-2xl shadow-black/45 text-[#e8e8ea] max-h-[480px] overflow-y-auto">
       {loading && (
-        <div style={{ padding: '16px', textAlign: 'center', color: '#9a9aa2', fontSize: '14px' }}>
-          검색 중...
-        </div>
+        <div className="p-4 text-center text-[#9a9aa2] text-sm">검색 중...</div>
       )}
 
       {/* 네트워크/서버 오류와 "진짜 0건"을 구분해서 보여준다 */}
       {!loading && error && (
-        <div style={{ padding: '16px', textAlign: 'center', color: '#ff6b6b', fontSize: '14px' }}>
+        <div className="p-4 text-center text-red-400 text-sm">
           검색 제안을 불러오지 못했습니다
         </div>
       )}
 
       {!loading && !error && suggestions.length === 0 && (
-        <div style={{ padding: '16px', textAlign: 'center', color: '#9a9aa2', fontSize: '14px' }}>
+        <div className="p-4 text-center text-[#9a9aa2] text-sm">
           '{keyword}' 검색 결과가 없습니다
         </div>
       )}
@@ -60,56 +41,24 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
           <div
             key={game.appId}
             onClick={() => onSelectGame(game.appId)}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2a2a31')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '8px',
-              cursor: 'pointer',
-              borderRadius: '8px',
-              transition: 'background-color 0.15s ease',
-            }}
+            className="flex items-center gap-3 p-2 cursor-pointer rounded-lg transition-colors duration-150 hover:bg-[#2a2a31]"
           >
-            <div
-              style={{
-                width: '64px',
-                height: '36px',
-                overflow: 'hidden',
-                flexShrink: 0,
-                borderRadius: '6px',
-                backgroundColor: '#000',
-              }}
-            >
+            <div className="w-16 h-9 overflow-hidden flex-shrink-0 rounded-md bg-black">
               <img
                 src={game.headerImage}
                 alt={game.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                className="w-full h-full object-cover block"
               />
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#f2f2f4',
-              }}
-            >
+            <div className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-[#f2f2f4]">
               {game.name}
             </div>
 
             <div
-              style={{
-                flexShrink: 0,
-                fontSize: '13px',
-                fontWeight: 600,
-                color: game.finalPrice === 0 ? '#5ee87f' : '#e8e8ea',
-              }}
+              className={`flex-shrink-0 text-[13px] font-semibold ${
+                game.finalPrice === 0 ? 'text-green-400' : 'text-[#e8e8ea]'
+              }`}
             >
               {game.finalPrice === 0 ? '무료' : `${game.finalPrice.toLocaleString()}원`}
             </div>
@@ -119,20 +68,7 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
       {!loading && (
         <div
           onClick={onViewAll}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#33333b')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#26262c')}
-          style={{
-            marginTop: '4px',
-            padding: '10px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '13px',
-            color: '#f2f2f4',
-            backgroundColor: '#26262c',
-            borderRadius: '8px',
-            transition: 'background-color 0.15s ease',
-          }}
+          className="mt-1 p-2.5 text-center cursor-pointer font-semibold text-[13px] text-[#f2f2f4] bg-[#26262c] rounded-lg transition-colors duration-150 hover:bg-[#33333b]"
         >
           '{keyword}' 검색 결과 전체 보기
         </div>

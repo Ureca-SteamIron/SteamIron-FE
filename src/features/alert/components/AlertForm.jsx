@@ -51,83 +51,96 @@ export default function AlertForm({
     })
   }
 
+  const targetActive = targetDiscountEnabled && targetPriceAvailable
+
   return (
-    <Box style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+    <Box
+      noDefaultStyle
+      className="mt-2.5 flex flex-col gap-3.5 p-4 rounded-xl border border-[#2c2c33] bg-[#1b1b1f]"
+    >
+      <label className="flex items-center gap-2 cursor-pointer text-sm text-[#e8e8ea]">
         <input
           type="checkbox"
           checked={discountStartEnabled}
           onChange={(event) => setDiscountStartEnabled(event.target.checked)}
+          className="accent-green-400 w-4 h-4 cursor-pointer"
         />
         할인 시작하면 알림
       </label>
 
-      <div style={{ borderTop: '1px solid #555' }} />
+      <div className="border-t border-[#2c2c33]" />
 
-      <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+      <label className="flex items-center gap-2 cursor-pointer text-sm text-[#e8e8ea]">
         <input
           type="checkbox"
           checked={targetDiscountEnabled}
           disabled={!targetPriceAvailable}
           onChange={(event) => setTargetDiscountEnabled(event.target.checked)}
+          className="accent-green-400 w-4 h-4 cursor-pointer disabled:cursor-default disabled:opacity-40"
         />
         지정 할인율 알림
       </label>
 
       {!targetPriceAvailable && (
-        <div style={{ color: '#777', fontSize: '14px' }}>
+        <div className="text-[#7a7a82] text-sm">
           무료 게임은 기준 가격이 없어 지정 할인율 목표가를 계산할 수 없습니다.
         </div>
       )}
 
-      <div style={{ opacity: targetDiscountEnabled && targetPriceAvailable ? 1 : 0.45 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div className={targetActive ? 'opacity-100' : 'opacity-45'}>
+        <div className="flex items-center gap-2 flex-wrap text-sm">
           <input
             type="number"
             min="0"
             max="100"
             value={discountRate}
-            disabled={!targetDiscountEnabled || !targetPriceAvailable}
+            disabled={!targetActive}
             onChange={(event) => handleRateChange(event.target.value)}
-            style={{ width: '70px' }}
+            className="w-[70px] bg-[#26262c] text-[#e8e8ea] text-sm rounded-lg border border-[#2c2c33] px-2.5 py-1.5 outline-none focus:border-[#4a4a52] disabled:cursor-default"
           />
-          <span>% 이상 할인 시</span>
+          <span className="text-[#e8e8ea]">% 이상 할인 시</span>
           {computedTarget != null && (
-            <span style={{ color: '#777' }}>→ 목표가 약 {computedTarget.toLocaleString()}원</span>
+            <span className="text-[#9a9aa2]">→ 목표가 약 {computedTarget.toLocaleString()}원</span>
           )}
         </div>
 
-        <div style={{ marginTop: '12px', padding: '0 4px' }}>
+        <div className="mt-3 px-1">
           <input
             type="range"
             min="0"
             max="100"
             step="1"
             value={Number(discountRate || 0)}
-            disabled={!targetDiscountEnabled || !targetPriceAvailable}
+            disabled={!targetActive}
             onChange={(event) => handleRateChange(event.target.value)}
             aria-label="지정 할인율"
-            style={{
-              width: '100%',
-              accentColor: '#aaa',
-              cursor: targetDiscountEnabled && targetPriceAvailable ? 'pointer' : 'default',
-            }}
+            className={`w-full accent-green-400 ${targetActive ? 'cursor-pointer' : 'cursor-default'}`}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#777', fontSize: '13px' }}>
+          <div className="flex justify-between text-[#7a7a82] text-xs mt-1">
             <span>0%</span>
             <span>100%</span>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <Box onClick={submitting ? undefined : handleSubmit} style={{ cursor: 'pointer' }}>
+      <div className="flex gap-2">
+        <div
+          onClick={submitting ? undefined : handleSubmit}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
+            submitting
+              ? 'cursor-default opacity-50 text-[#0e0e10] bg-green-400'
+              : 'cursor-pointer text-[#0e0e10] bg-green-400 hover:bg-green-300'
+          }`}
+        >
           {submitting ? '저장 중...' : '저장'}
-        </Box>
+        </div>
         {onCancel && (
-          <Box onClick={onCancel} style={{ cursor: 'pointer' }}>
+          <div
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg text-sm text-[#e8e8ea] border border-[#2c2c33] bg-transparent cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+          >
             취소
-          </Box>
+          </div>
         )}
       </div>
     </Box>

@@ -88,9 +88,14 @@ export default function SearchTopBar({ initialKeyword = '' }) {
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-        <div ref={containerRef} style={{ position: 'relative', flex: 1, maxWidth: '600px', margin: '0 auto' }}>
-          <Box style={{ padding: '4px 10px' }}>
+      <div className="flex gap-4 items-start">
+        <div ref={containerRef} className="relative flex-1 max-w-[600px] mx-auto">
+          <Box
+            noDefaultStyle
+            className={`flex items-center rounded-xl border bg-[#1b1b1f] px-4 py-2.5 transition-colors duration-150 ${
+              searchError ? 'border-red-500' : 'border-[#2c2c33] focus-within:border-[#4a4a52]'
+            }`}
+          >
             <input
               type="text"
               placeholder="게임 이름으로 검색"
@@ -106,7 +111,7 @@ export default function SearchTopBar({ initialKeyword = '' }) {
               onFocus={() => {
                 if (searchKeyword.trim().length >= SEARCH_MIN_KEYWORD_LENGTH) setShowDropdown(true)
               }}
-              style={{ width: '100%', border: 'none', outline: 'none' }}
+              className="w-full bg-transparent border-none outline-none text-sm text-[#e8e8ea] placeholder:text-[#7a7a82]"
             />
           </Box>
 
@@ -125,31 +130,43 @@ export default function SearchTopBar({ initialKeyword = '' }) {
             />
           )}
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Box onClick={() => navigate('/notifications')}>알림</Box>
+
+        <div className="flex gap-2.5">
+          <Box
+            noDefaultStyle
+            onClick={() => navigate('/notifications')}
+            className="rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+          >
+            알림
+          </Box>
+
           {user ? (
-            <Box onClick={() => navigate('/me')} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Box
+              noDefaultStyle
+              onClick={() => navigate('/me')}
+              className="flex items-center gap-2 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+            >
               {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt=""
-                  style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                />
+                <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
               ) : (
-                <div style={{ width: '28px', height: '28px', border: '2px solid black', borderRadius: '50%' }} />
+                <div className="w-7 h-7 rounded-full border-2 border-[#3a3a42] bg-[#26262c]" />
               )}
               <span>마이페이지</span>
             </Box>
           ) : (
-            <Box onClick={() => navigate('/login')}>login (discord)</Box>
+            <Box
+              noDefaultStyle
+              onClick={() => navigate('/login')}
+              className="rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+            >
+              login (discord)
+            </Box>
           )}
         </div>
       </div>
 
       {searchError && (
-        <div style={{ textAlign: 'center', color: 'red', fontSize: '13px', marginTop: '6px' }}>
-          {searchError}
-        </div>
+        <div className="text-center text-red-400 text-[13px] mt-1.5">{searchError}</div>
       )}
     </>
   )
