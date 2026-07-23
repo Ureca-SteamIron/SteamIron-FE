@@ -23,21 +23,35 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
         top: '100%',
         left: 0,
         right: 0,
-        marginTop: '4px',
+        marginTop: '8px',
         zIndex: 10,
-        padding: 0,
-        backgroundColor: 'white',
+        padding: '6px',
+        backgroundColor: '#1b1b1f',
+        borderRadius: '12px',
+        border: '1px solid #2c2c33',
+        boxShadow: '0 12px 28px rgba(0, 0, 0, 0.45)',
+        color: '#e8e8ea',
+        maxHeight: '480px',
+        overflowY: 'auto',
       }}
     >
-      {loading && <div style={{ padding: '10px' }}>검색 중...</div>}
+      {loading && (
+        <div style={{ padding: '16px', textAlign: 'center', color: '#9a9aa2', fontSize: '14px' }}>
+          검색 중...
+        </div>
+      )}
 
       {/* 네트워크/서버 오류와 "진짜 0건"을 구분해서 보여준다 */}
       {!loading && error && (
-        <div style={{ padding: '10px', color: 'red' }}>검색 제안을 불러오지 못했습니다</div>
+        <div style={{ padding: '16px', textAlign: 'center', color: '#ff6b6b', fontSize: '14px' }}>
+          검색 제안을 불러오지 못했습니다
+        </div>
       )}
 
       {!loading && !error && suggestions.length === 0 && (
-        <div style={{ padding: '10px' }}>'{keyword}' 검색 결과가 없습니다</div>
+        <div style={{ padding: '16px', textAlign: 'center', color: '#9a9aa2', fontSize: '14px' }}>
+          '{keyword}' 검색 결과가 없습니다
+        </div>
       )}
 
       {!loading &&
@@ -46,26 +60,57 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
           <div
             key={game.appId}
             onClick={() => onSelectGame(game.appId)}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2a2a31')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              padding: '8px 10px',
+              gap: '12px',
+              padding: '8px',
               cursor: 'pointer',
-              borderBottom: '1px solid #ddd',
+              borderRadius: '8px',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            <div style={{ width: '60px', height: '34px', overflow: 'hidden', flexShrink: 0 }}>
+            <div
+              style={{
+                width: '64px',
+                height: '36px',
+                overflow: 'hidden',
+                flexShrink: 0,
+                borderRadius: '6px',
+                backgroundColor: '#000',
+              }}
+            >
               <img
                 src={game.headerImage}
                 alt={game.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
-            <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+
+            <div
+              style={{
+                flex: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#f2f2f4',
+              }}
+            >
               {game.name}
             </div>
-            <div style={{ flexShrink: 0, fontSize: '13px' }}>
+
+            <div
+              style={{
+                flexShrink: 0,
+                fontSize: '13px',
+                fontWeight: 600,
+                color: game.finalPrice === 0 ? '#5ee87f' : '#e8e8ea',
+              }}
+            >
               {game.finalPrice === 0 ? '무료' : `${game.finalPrice.toLocaleString()}원`}
             </div>
           </div>
@@ -74,7 +119,20 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
       {!loading && (
         <div
           onClick={onViewAll}
-          style={{ padding: '10px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#33333b')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#26262c')}
+          style={{
+            marginTop: '4px',
+            padding: '10px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '13px',
+            color: '#f2f2f4',
+            backgroundColor: '#26262c',
+            borderRadius: '8px',
+            transition: 'background-color 0.15s ease',
+          }}
         >
           '{keyword}' 검색 결과 전체 보기
         </div>
