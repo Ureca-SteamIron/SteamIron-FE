@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FaBell, FaBellSlash } from 'react-icons/fa'
+import { FaBell, FaBellSlash, FaSteam } from 'react-icons/fa'
 import Box from '../shared/components/Box'
 import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
 import {
@@ -191,6 +191,14 @@ export default function GameDetailPage() {
       .finally(() => setRefreshing(false))
   }
 
+  const handleOpenSteamStore = () => {
+    window.open(
+      `https://store.steampowered.com/app/${gameId}`,
+      '_blank',
+      'noopener,noreferrer',
+    )
+  }
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
@@ -227,16 +235,29 @@ export default function GameDetailPage() {
         <Box onClick={() => navigate('/')} style={{ display: 'inline-block' }}>
           ← 메인으로
         </Box>
-        <Box
-          onClick={handleRefresh}
-          style={{
-            display: 'inline-block',
-            cursor: isRefreshDisabled ? 'default' : 'pointer',
-            opacity: isRefreshDisabled ? 0.5 : 1,
-          }}
-        >
-          {refreshLabel}
-        </Box>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box
+            onClick={handleRefresh}
+            style={{
+              display: 'inline-block',
+              cursor: isRefreshDisabled ? 'default' : 'pointer',
+              opacity: isRefreshDisabled ? 0.5 : 1,
+            }}
+          >
+            {refreshLabel}
+          </Box>
+          <Box
+            onClick={handleOpenSteamStore}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <FaSteam size={20} />
+            <span>Steam Store</span>
+          </Box>
+        </div>
       </div>
 
       {refreshError && <Box style={{ marginTop: '10px' }}>갱신 실패: {refreshError}</Box>}
