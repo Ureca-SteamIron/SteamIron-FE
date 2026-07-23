@@ -127,7 +127,6 @@ export default function SearchTopBar({ initialKeyword = '' }) {
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <Box onClick={() => navigate('/notifications')}>알림</Box>
-          <Box onClick={() => navigate('/me')}>마이페이지</Box>
           {user ? (
             <Box onClick={() => navigate('/me')} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {user.avatarUrl ? (
@@ -139,7 +138,7 @@ export default function SearchTopBar({ initialKeyword = '' }) {
               ) : (
                 <div style={{ width: '28px', height: '28px', border: '2px solid black', borderRadius: '50%' }} />
               )}
-              <span>{user.username}</span>
+              <span>마이페이지</span>
             </Box>
           ) : (
             <Box onClick={() => navigate('/login')}>login (discord)</Box>
