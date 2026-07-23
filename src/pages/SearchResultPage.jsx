@@ -147,9 +147,7 @@ export default function SearchResultPage() {
           />
         </Box>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          {game.isFree ? (
-            <span>무료</span>
-          ) : game.discountPercent > 0 ? (
+          {game.discountPercent > 0 ? (
             <>
               <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
                 {originalPrice.toLocaleString()}원
@@ -157,6 +155,8 @@ export default function SearchResultPage() {
               <span>-{game.discountPercent}%</span>{' '}
               <span>{finalPrice.toLocaleString()}원</span>
             </>
+          ) : game.isFree ? (
+            <span>무료</span>
           ) : (
             <span>{finalPrice.toLocaleString()}원</span>
           )}
