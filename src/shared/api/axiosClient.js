@@ -33,45 +33,65 @@ axiosClient.interceptors.request.use((config) => {
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
-    const isAuthRequest = originalRequest?.url?.includes('/api/auth/')
+    const originalRequest = error.config;
+    const isAuthRequest = originalRequest?.url?.includes('/api/auth/');
 
-    if (error.response?.status !== 401 || !originalRequest || originalRequest._retry || isAuthRequest) {
-      return Promise.reject(error)
+    // 1. 진짜 401 에러가 아니거나, 인증(로그인 등) API에서 난 에러면 그냥 통과
+    if (error.response?.status !== 401 || !originalRequest || isAuthRequest) {
+      return Promise.reject(error);
     }
 
-    const session = readSession()
+    // 2. 🚨 해결 포인트: 401 에러인데 이미 _retry가 true라면 무한 루프 방지를 위해 여기서 강제 로그아웃!
+    if (originalRequest._retry) {
+      console.log("🛑 이미 재시도한 요청이 또 401 에러를 뱉음! 강제 로그아웃 처리!");
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      alert('로그인이 만료되었습니다.');
+      window.location.href = '/login';
+      return Promise.reject(new Error('로그인이 만료되었습니다.'));
+    }
+
+    // 아래부터는 정상적으로 리프레시 토큰을 이용한 재발급 로직 실행
+    const session = readSession();
+    
     if (!session?.refreshToken) {
-      localStorage.removeItem(AUTH_STORAGE_KEY)
-      return Promise.reject(new Error('로그인이 만료되었습니다. 다시 로그인해주세요.'))
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      alert('로그인이 만료되었습니다.');
+      window.location.href = '/login';
+      return Promise.reject(new Error('로그인이 만료되었습니다.'));
     }
 
-    originalRequest._retry = true
+    originalRequest._retry = true; // 이제서야 이번 요청에 재시도 꼬리표를 붙임
 
     try {
       if (!refreshPromise) {
+        // 기본 axios를 써서 무한 루프 방지
         refreshPromise = axios.post(`${API_BASE_URL}/api/auth/reissue`, {
           refreshToken: session.refreshToken,
-        })
+        });
       }
 
-      const { data } = await refreshPromise
+      const { data } = await refreshPromise;
+      
       const renewedSession = {
         ...session,
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
-      }
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(renewedSession))
+      };
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(renewedSession));
 
-      originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
-      return axiosClient(originalRequest)
-    } catch {
-      localStorage.removeItem(AUTH_STORAGE_KEY)
-      return Promise.reject(new Error('로그인이 만료되었습니다. 다시 로그인해주세요.'))
+      originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+      return axiosClient(originalRequest);
+      
+    } catch (err) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      alert('로그인이 만료되었습니다.');
+      window.location.href = '/login';
+      return Promise.reject(new Error('로그인이 만료되었습니다.'));
     } finally {
-      refreshPromise = null
+      refreshPromise = null;
     }
   },
-)
+);
+
 
 export default axiosClient
