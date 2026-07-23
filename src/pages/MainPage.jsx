@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Box from '../shared/components/Box'
 import SearchTopBar from '../shared/components/SearchTopBar'
@@ -232,6 +232,86 @@ export default function MainPage() {
     )
   }
 
+  // 찜 목록 정렬, 필터링, 페이지네이션은 모두 프론트엔드에서 처리
+  // 이름순 그룹 우선순위: 한글 → 영어 → 기타 (백엔드 GameNameSort와 동일한 규칙)
+  function nameGroup(name) {
+    const ch = name?.[0] ?? ''
+    if (/[가-힣]/.test(ch)) return 0
+    if (/[a-zA-Z]/.test(ch)) return 1
+    return 2
+  }
+
+  function compareByName(a, b) {
+    const groupDiff = nameGroup(a.name) - nameGroup(b.name)
+    if (groupDiff !== 0) return groupDiff
+    return a.name.localeCompare(b.name, 'ko')
+  }
+
+  function applyWishlistFilters(games, filters) {
+    return games.filter((g) => {
+      const finalPrice = g.finalPrice ?? 0
+      const discountPercent = g.discountPercent ?? 0
+
+      if (filters.priceType === 'free' && !g.isFree) return false
+      if (filters.priceType === 'paid' && g.isFree) return false
+
+      if (filters.minPrice !== undefined && filters.minPrice !== '' && finalPrice < Number(filters.minPrice)) return false
+      if (filters.maxPrice !== undefined && filters.maxPrice !== '' && finalPrice > Number(filters.maxPrice)) return false
+
+      if (filters.minDiscount && discountPercent < Number(filters.minDiscount)) return false
+      if (filters.sale && discountPercent <= 0) return false
+
+      // 장르 필터는 GameSimpleResponse에 genre 정보가 없어 현재 적용 불가
+      return true
+    })
+  }
+
+  function applyWishlistSort(games, sort) {
+    const arr = [...games]
+    switch (sort) {
+      case 'price_asc':
+        return arr.sort((a, b) => (a.finalPrice ?? 0) - (b.finalPrice ?? 0))
+      case 'price_desc':
+        return arr.sort((a, b) => (b.finalPrice ?? 0) - (a.finalPrice ?? 0))
+      case 'discount_desc':
+        return arr.sort((a, b) => (b.discountPercent ?? 0) - (a.discountPercent ?? 0))
+      case 'name_asc':
+        return arr.sort(compareByName)
+      case 'name_desc':
+        return arr.sort((a, b) => -compareByName(a, b))
+      default:
+        return arr
+    }
+  }
+
+  function applyWishlistFilters(games, filters) {
+    return games.filter((g) => {
+      const finalPrice = g.finalPrice ?? 0
+      const discountPercent = g.discountPercent ?? 0
+
+      if (filters.priceType === 'free' && !g.isFree) return false
+      if (filters.priceType === 'paid' && g.isFree) return false
+
+      if (filters.minPrice !== undefined && filters.minPrice !== '' && finalPrice < Number(filters.minPrice)) return false
+      if (filters.maxPrice !== undefined && filters.maxPrice !== '' && finalPrice > Number(filters.maxPrice)) return false
+
+      if (filters.minDiscount && discountPercent < Number(filters.minDiscount)) return false
+      if (filters.sale && discountPercent <= 0) return false
+
+      if (filters.genre && filters.genre !== 'all') {
+        const genres = g.genres ?? []
+        if (!genres.includes(filters.genre)) return false
+      }
+
+      return true
+    })
+  }
+
+  const displayedWishlist = useMemo(() => {
+    const filtered = applyWishlistFilters(wishlist, appliedFilters)
+    return applyWishlistSort(filtered, sort)
+  }, [wishlist, appliedFilters, sort])
+
   return (
     <div style={{ padding: '20px' }}>
       <SearchTopBar />
@@ -333,12 +413,12 @@ export default function MainPage() {
             <>
               {wishlistLoading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
               {wishlistError && <Box style={{ marginBottom: '10px' }}>에러: {wishlistError}</Box>}
-              {!wishlistLoading && !wishlistError && wishlist.length === 0 && (
+              {!wishlistLoading && !wishlistError && displayedWishlist.length === 0 && (
                 <Box style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   찜한 게임이 없습니다
                 </Box>
               )}
-              {wishlist.map(renderGameRow)}
+              {displayedWishlist.map(renderGameRow)}
             </>
           )}
         </div>
