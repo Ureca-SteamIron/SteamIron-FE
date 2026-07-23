@@ -198,10 +198,14 @@ export default function MainPage() {
         style={{ display: 'flex', alignItems: 'center', gap: '30px', marginBottom: '10px' }}
       >
         <Box style={{ width: '120px', height: '50px', padding: 0, overflow: 'hidden' }}>
-          <img src={game.headerImage} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={game.headerImage}
+            alt={game.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         </Box>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          {finalPrice === 0 ? (
+          {game.isFree ? (
             <span>무료</span>
           ) : game.discountPercent > 0 ? (
             <>
@@ -227,7 +231,11 @@ export default function MainPage() {
         >
           {game.name}
         </div>
-        <WishlistHeartButton liked={liked} disabled={isPending} onClick={(e) => toggleWishlist(e, game)} />
+        <WishlistHeartButton
+          liked={liked}
+          disabled={isPending}
+          onClick={(e) => toggleWishlist(e, game)}
+        />
       </Box>
     )
   }
