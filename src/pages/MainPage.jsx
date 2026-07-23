@@ -333,7 +333,7 @@ export default function MainPage() {
       <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-            <SortDropdown value={sort} onChange={setSort} />
+            <SortDropdown value={sort} onChange={setSort} hidePopularLabel={tab !== 'top100'} />
           </div>
 
           {tab === 'top100' && (
