@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   font-family: system-ui, "Segoe UI", "Malgun Gothic", sans-serif;
   color-scheme: light dark;

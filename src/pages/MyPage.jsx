@@ -11,18 +11,22 @@ import { deleteComment as deleteMyComment } from '../features/comment/api/commen
 const NAME_COLUMN_WIDTH = '180px'
 const HEART_COLUMN_WIDTH = '36px'
 
+const cardClass = 'rounded-xl border border-[#2c2c33] bg-[#1b1b1f]'
+const inputClass =
+  'w-full bg-[#26262c] text-[#e8e8ea] text-sm rounded-lg border border-[#2c2c33] px-3 py-2 outline-none focus:border-[#4a4a52] mt-1.5'
+const linkButtonClass =
+  'inline-flex items-center rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]'
+
 // 마이페이지: 내 정보 조회/수정 / 관심목록 / 내 커뮤니티 글 / 회원탈퇴 / 로그아웃
 export default function MyPage() {
   const navigate = useNavigate()
   const user = getSession()
 
-  // 로그아웃: localStorage 세션을 지워야 진짜 로그아웃 (navigate만으론 세션이 남아 계속 로그인 상태)
   const handleLogout = () => {
     clearSession()
     navigate('/')
   }
 
-  // 아이디/비밀번호 수정 폼
   const [editing, setEditing] = useState(false)
   const [loginId, setLoginId] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
@@ -31,7 +35,6 @@ export default function MyPage() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
 
-  // 수정 폼 열 때 현재 아이디를 불러와 미리 채운다
   const openEdit = () => {
     setMsg('')
     setEditing(true)
@@ -61,11 +64,9 @@ export default function MyPage() {
       .finally(() => setSaving(false))
   }
 
-  // ===== 관심목록(찜) 상태 — MainPage와 동일한 패턴 =====
   const [wishlist, setWishlist] = useState([])
   const [wishlistLoading, setWishlistLoading] = useState(true)
   const [wishlistError, setWishlistError] = useState(null)
-  // 하트 클릭 중복 호출 방지 (게임별 요청 진행 상태)
   const [pendingIds, setPendingIds] = useState(new Set())
 
   const loadWishlist = () => {
@@ -93,14 +94,12 @@ export default function MyPage() {
     }
   }
 
-  // 마운트 시 찜 목록 로드
   useEffect(() => {
     const cancel = loadWishlist()
     return cancel
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 관심목록 해제: MainPage의 handleToggleWishlist에서 remove 부분만 필요 (여긴 이미 찜한 것만 보여주므로)
   const handleRemoveWishlist = async (e, gameId) => {
     e.stopPropagation()
     if (pendingIds.has(gameId)) return
@@ -120,71 +119,57 @@ export default function MyPage() {
     }
   }
 
-  // MainPage의 renderGameRow와 동일한 레이아웃: 사진 / 가격 / 이름 / 하트
   const renderWishlistRow = (game) => {
     const isPending = pendingIds.has(game.appId)
     const originalPrice = game.originalPrice ?? 0
     const finalPrice = game.finalPrice ?? 0
 
     return (
-      <Box
+      <div
         key={game.appId}
         onClick={() => navigate(`/games/${game.appId}`)}
-        style={{ display: 'flex', alignItems: 'center', gap: '30px', marginTop: '10px' }}
+        className="flex items-center gap-6 mt-2.5 p-3 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
       >
-        <Box style={{ width: '120px', height: '50px', padding: 0, overflow: 'hidden' }}>
-          <img
-            src={game.headerImage}
-            alt={game.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        </Box>
-        <div style={{ flex: 1, textAlign: 'center' }}>
+        <div className="w-[120px] h-[64px] rounded-lg overflow-hidden flex-shrink-0 bg-black">
+          <img src={game.headerImage} alt={game.name} className="w-full h-full object-cover" />
+        </div>
+
+        <div className="flex-1 min-w-0 flex items-center justify-center gap-2 text-sm flex-wrap">
           {finalPrice === 0 ? (
-            <span>무료</span>
+            <span className="text-green-400 font-semibold">무료</span>
           ) : game.discountPercent > 0 ? (
             <>
-              <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
+              <span className="line-through text-[#7a7a82]">
                 {originalPrice.toLocaleString()}원
               </span>
-              <span>-{game.discountPercent}%</span>{' '}
-              <span>{finalPrice.toLocaleString()}원</span>
+              <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
+              <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
             </>
           ) : (
-            <span>{finalPrice.toLocaleString()}원</span>
+            <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
           )}
         </div>
+
         <div
-          style={{
-            width: NAME_COLUMN_WIDTH,
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
+          className="text-right whitespace-nowrap overflow-hidden text-ellipsis text-[#f2f2f4] font-medium"
+          style={{ width: NAME_COLUMN_WIDTH }}
           title={game.name}
         >
           {game.name}
         </div>
+
         <button
           onClick={(e) => !isPending && handleRemoveWishlist(e, game.appId)}
           disabled={isPending}
-          style={{
-            border: 'none',
-            background: 'none',
-            cursor: isPending ? 'default' : 'pointer',
-            padding: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: HEART_COLUMN_WIDTH,
-            opacity: isPending ? 0.5 : 1,
-          }}
           aria-label="찜 해제"
+          className={`flex items-center justify-center border-none bg-none p-0 transition-opacity duration-150 ${
+            isPending ? 'cursor-default opacity-50' : 'cursor-pointer opacity-100 hover:opacity-70'
+          }`}
+          style={{ width: HEART_COLUMN_WIDTH }}
         >
           <FaHeart size={18} color="#e74c3c" />
         </button>
-      </Box>
+      </div>
     )
   }
 
@@ -217,137 +202,173 @@ export default function MyPage() {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Box onClick={() => navigate('/')} style={{ display: 'inline-block' }}>← 메인으로</Box>
-        <Box onClick={handleLogout} style={{ display: 'inline-block' }}>로그아웃</Box>
-      </div>
-
-      {/* 내 정보 */}
-      <Box style={{ marginTop: '20px' }}>
-        <div>내 정보 {user?.username ? `(${user.username})` : ''}</div>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-          {user ? (
-            <Box onClick={() => (editing ? setEditing(false) : openEdit())} style={{ cursor: 'pointer' }}>
-              아이디/비밀번호 수정
-            </Box>
-          ) : (
-            <Box onClick={() => navigate('/login')} style={{ cursor: 'pointer' }}>로그인</Box>
-          )}
-          <Box>회원탈퇴</Box>
+    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea] overflow-x-hidden">
+      <div className="w-[1400px] max-w-full mx-auto p-5">
+        <div className="flex justify-between">
+          <div onClick={() => navigate('/')} className={linkButtonClass}>
+            ← 메인으로
+          </div>
+          <div onClick={handleLogout} className={linkButtonClass}>
+            로그아웃
+          </div>
         </div>
 
-        {editing && (
-          <Box style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '360px' }}>
-            <label>
-              아이디
-              <input
-                type="text"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </label>
-            <label>
-              현재 비밀번호
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </label>
-            <label>
-              새 비밀번호 <span style={{ color: '#888', fontSize: '12px' }}>(비우면 그대로)</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </label>
-            <label>
-              새 비밀번호 확인
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Box onClick={saving ? undefined : handleSave} style={{ cursor: 'pointer' }}>
-                {saving ? '저장 중...' : '저장'}
-              </Box>
-              <Box onClick={() => setEditing(false)} style={{ cursor: 'pointer' }}>취소</Box>
-            </div>
-          </Box>
-        )}
-
-        {msg && <div style={{ marginTop: '8px' }}>{msg}</div>}
-      </Box>
-
-      {/* 관심목록 — 게임 누르면 상세로 */}
-      <Box style={{ marginTop: '20px' }}>
-        <div>관심목록</div>
-
-        {!user && (
-          <Box style={{ marginTop: '10px' }}>로그인이 필요합니다</Box>
-        )}
-
-        {user && wishlistLoading && (
-          <Box style={{ marginTop: '10px' }}>불러오는 중...</Box>
-        )}
-
-        {user && wishlistError && (
-          <Box style={{ marginTop: '10px' }}>에러: {wishlistError}</Box>
-        )}
-
-        {user && !wishlistLoading && !wishlistError && wishlist.length === 0 && (
-          <Box style={{ marginTop: '10px' }}>찜한 게임이 없습니다</Box>
-        )}
-
-        {user && !wishlistLoading && !wishlistError && wishlist.map(renderWishlistRow)}
-      </Box>
-
-      {/* 내 커뮤니티 글 */}
-      <Box style={{ marginTop: '20px' }}>
-        <div>내 커뮤니티 글 (내가 쓴 글 / 댓글 목록)</div>
-
-        {!user && <Box style={{ marginTop: '10px' }}>로그인이 필요합니다</Box>}
-        {user && myCommentsLoading && <Box style={{ marginTop: '10px' }}>불러오는 중...</Box>}
-        {user && myCommentsError && <Box style={{ marginTop: '10px' }}>에러: {myCommentsError}</Box>}
-        {user && !myCommentsLoading && !myCommentsError && myComments.length === 0 && (
-          <Box style={{ marginTop: '10px' }}>작성한 댓글이 없습니다</Box>
-        )}
-
-        {user &&
-          !myCommentsLoading &&
-          !myCommentsError &&
-          myComments.map((comment) => (
-            <Box
-              key={comment.id}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}
-            >
+        {/* 내 정보 */}
+        <div className={`${cardClass} mt-6 p-5`}>
+          <div className="font-bold text-sm text-[#f2f2f4]">
+            내 정보 {user?.username ? `(${user.username})` : ''}
+          </div>
+          <div className="flex gap-2.5 mt-3">
+            {user ? (
               <div
-                onClick={() => navigate(`/games/${comment.gameId}`)}
-                style={{ flex: 1, cursor: 'pointer' }}
+                onClick={() => (editing ? setEditing(false) : openEdit())}
+                className="px-4 py-2 rounded-lg text-sm text-[#e8e8ea] border border-[#2c2c33] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
               >
-                <div style={{ fontSize: '12px', color: '#888' }}>{comment.gameName}</div>
-                <div>{comment.content}</div>
-                <div style={{ fontSize: '12px', color: '#888' }}>
-                  {new Date(comment.createdAt).toLocaleString()}
+                아이디/비밀번호 수정
+              </div>
+            ) : (
+              <div
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-[#0e0e10] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
+              >
+                로그인
+              </div>
+            )}
+            <div className="px-4 py-2 rounded-lg text-sm text-red-400 border border-[#2c2c33] cursor-pointer transition-colors duration-150 hover:bg-red-400/10 hover:border-red-400/40">
+              회원탈퇴
+            </div>
+          </div>
+
+          {editing && (
+            <div className="mt-4 flex flex-col gap-3 max-w-[360px]">
+              <label className="text-sm text-[#e8e8ea]">
+                아이디
+                <input
+                  type="text"
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm text-[#e8e8ea]">
+                현재 비밀번호
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm text-[#e8e8ea]">
+                새 비밀번호{' '}
+                <span className="text-[#7a7a82] text-xs">(비우면 그대로)</span>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm text-[#e8e8ea]">
+                새 비밀번호 확인
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <div className="flex gap-2">
+                <div
+                  onClick={saving ? undefined : handleSave}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
+                    saving
+                      ? 'cursor-default opacity-50 text-[#0e0e10] bg-green-400'
+                      : 'cursor-pointer text-[#0e0e10] bg-green-400 hover:bg-green-300'
+                  }`}
+                >
+                  {saving ? '저장 중...' : '저장'}
+                </div>
+                <div
+                  onClick={() => setEditing(false)}
+                  className="px-4 py-2 rounded-lg text-sm text-[#e8e8ea] border border-[#2c2c33] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+                >
+                  취소
                 </div>
               </div>
-              <Box
-                onClick={() => handleDeleteMyComment(comment.id)}
-                style={{ cursor: 'pointer' }}
+            </div>
+          )}
+
+          {msg && <div className="mt-2 text-sm text-[#9a9aa2]">{msg}</div>}
+        </div>
+
+        {/* 관심목록 */}
+        <div className={`${cardClass} mt-6 p-5`}>
+          <div className="font-bold text-sm text-[#f2f2f4]">관심목록</div>
+
+          {!user && (
+            <div className="mt-2.5 text-sm text-[#9a9aa2]">로그인이 필요합니다</div>
+          )}
+          {user && wishlistLoading && (
+            <div className="mt-2.5 text-sm text-[#9a9aa2]">불러오는 중...</div>
+          )}
+          {user && wishlistError && (
+            <div className="mt-2.5 text-sm text-red-400">에러: {wishlistError}</div>
+          )}
+          {user && !wishlistLoading && !wishlistError && wishlist.length === 0 && (
+            <div className="mt-2.5 text-sm text-[#9a9aa2]">찜한 게임이 없습니다</div>
+          )}
+
+          {user && !wishlistLoading && !wishlistError && wishlist.map(renderWishlistRow)}
+        </div>
+
+        {/* 내 커뮤니티 글 */}
+        <div className={`${cardClass} mt-6 p-5`}>
+          <div className="font-bold text-sm text-[#f2f2f4]">
+            내 커뮤니티 글 (내가 쓴 글 / 댓글 목록)
+          </div>
+
+          {!user && (
+            <div className="mt-2.5 text-sm text-[#9a9aa2]">로그인이 필요합니다</div>
+          )}
+          {user && myCommentsLoading && (
+            <div className="mt-2.5 text-sm text-[#9a9aa2]">불러오는 중...</div>
+          )}
+          {user && myCommentsError && (
+            <div className="mt-2.5 text-sm text-red-400">에러: {myCommentsError}</div>
+          )}
+          {user && !myCommentsLoading && !myCommentsError && myComments.length === 0 && (
+            <div className="mt-2.5 text-sm text-[#9a9aa2]">작성한 댓글이 없습니다</div>
+          )}
+
+          {user &&
+            !myCommentsLoading &&
+            !myCommentsError &&
+            myComments.map((comment) => (
+              <div
+                key={comment.id}
+                className="flex items-center gap-3 mt-2.5 p-3.5 rounded-xl border border-[#2c2c33] bg-[#22222a]"
               >
-                삭제
-              </Box>
-            </Box>
-          ))}
-      </Box>
+                <div
+                  onClick={() => navigate(`/games/${comment.gameId}`)}
+                  className="flex-1 min-w-0 cursor-pointer"
+                >
+                  <div className="text-xs text-[#7a7a82]">{comment.gameName}</div>
+                  <div className="text-sm text-[#e8e8ea] mt-1 truncate">{comment.content}</div>
+                  <div className="text-xs text-[#7a7a82] mt-1">
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </div>
+                </div>
+                <div
+                  onClick={() => handleDeleteMyComment(comment.id)}
+                  className="text-sm text-[#9a9aa2] cursor-pointer transition-colors duration-150 hover:text-red-400 flex-shrink-0"
+                >
+                  삭제
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   )
 }

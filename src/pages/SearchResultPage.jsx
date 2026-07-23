@@ -48,7 +48,6 @@ export default function SearchResultPage() {
 
   const user = getSession()
 
-  // 찜 여부 판단용 id Set. MainPage와 동일한 패턴 — 로그인 시에만 로드.
   const [wishlistIds, setWishlistIds] = useState(new Set())
   const { pendingIds, toggleWishlist } = useWishlistToggle(wishlistIds, setWishlistIds)
 
@@ -66,8 +65,6 @@ export default function SearchResultPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 정렬은 선택 즉시 적용, 필터는 "적용" 버튼으로 반영 — MainPage와 동일한 패턴.
-  // 둘 다 바뀌면 현재 페이지가 더 이상 유효하지 않을 수 있으니 1페이지로 되돌린다.
   const [sort, setSort] = useState('popular')
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS)
@@ -134,132 +131,145 @@ export default function SearchResultPage() {
     const finalPrice = game.finalPrice ?? 0
 
     return (
-      <Box
+      <div
         key={game.appId}
         onClick={() => navigate(`/games/${game.appId}`)}
-        style={{ display: 'flex', alignItems: 'center', gap: '30px', marginBottom: '10px' }}
+        className="flex items-center gap-6 mb-2.5 p-3 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
       >
-        <Box style={{ width: '120px', height: '50px', padding: 0, overflow: 'hidden' }}>
+        <div className="w-[120px] h-[64px] rounded-lg overflow-hidden flex-shrink-0 bg-black">
           <img
             src={game.headerImage}
             alt={game.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            className="w-full h-full object-cover"
           />
-        </Box>
-        <div style={{ flex: 1, textAlign: 'center' }}>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center gap-2 text-sm">
           {game.discountPercent > 0 ? (
             <>
-              <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>
+              <span className="line-through text-[#7a7a82]">
                 {originalPrice.toLocaleString()}원
               </span>
-              <span>-{game.discountPercent}%</span>{' '}
-              <span>{finalPrice.toLocaleString()}원</span>
+              <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
+              <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
             </>
           ) : game.isFree ? (
-            <span>무료</span>
+            <span className="text-green-400 font-semibold">무료</span>
           ) : (
-            <span>{finalPrice.toLocaleString()}원</span>
+            <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
           )}
         </div>
+
         <div
-          style={{
-            width: NAME_COLUMN_WIDTH,
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
+          className="text-right whitespace-nowrap overflow-hidden text-ellipsis text-[#f2f2f4] font-medium"
+          style={{ width: NAME_COLUMN_WIDTH }}
           title={game.name}
         >
           {game.name}
         </div>
+
         <WishlistHeartButton
           liked={liked}
           disabled={isPending}
           onClick={(e) => toggleWishlist(e, game)}
         />
-      </Box>
+      </div>
     )
   }
 
+  const stateBoxClass = 'mb-2.5 p-4 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-center text-[#9a9aa2] text-sm'
+  const emptyBoxClass = 'h-[200px] flex items-center justify-center rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-[#9a9aa2] text-sm'
+
   return (
-    <div style={{ padding: '20px' }}>
-      {/* keyword가 바뀌면(다른 검색 결과로 이동/뒤로가기) 검색창 내부 상태를 새로 초기화 */}
-      <SearchTopBar key={keyword} initialKeyword={keyword} />
+    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea]">
+      <div className="max-w-[1400px] mx-auto p-5">
+        <SearchTopBar key={keyword} initialKeyword={keyword} />
 
-      <Box onClick={() => navigate('/')} style={{ display: 'inline-block', marginTop: '20px' }}>← 메인으로</Box>
-
-      <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-        '{keyword}' 검색 결과{!isKeywordTooShort && !loading && !error && ` (${totalElements}건)`}
-      </div>
-
-      <div style={{ display: 'flex', gap: '30px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-            <SortDropdown value={sort} onChange={handleSortChange} />
-          </div>
-
-          {isKeywordTooShort && (
-            <Box style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              검색어는 {SEARCH_MIN_KEYWORD_LENGTH}자 이상 입력해주세요
-            </Box>
-          )}
-          {!isKeywordTooShort && loading && <Box style={{ marginBottom: '10px' }}>불러오는 중...</Box>}
-          {!isKeywordTooShort && error && <Box style={{ marginBottom: '10px' }}>에러: {error}</Box>}
-          {!isKeywordTooShort && !loading && !error && games.length === 0 && (
-            <Box style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              검색 결과가 없습니다
-            </Box>
-          )}
-
-          {!isKeywordTooShort && games.map(renderGameRow)}
-
-          {!isKeywordTooShort && !loading && !error && similarGames.length > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>유사한 게임</div>
-              {similarGames.map(renderGameRow)}
-            </div>
-          )}
-
-          {!isKeywordTooShort && !loading && !error && totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px' }}>
-              <Box
-                onClick={() => page > 0 && goToPage(page - 1)}
-                style={{ cursor: page > 0 ? 'pointer' : 'default', opacity: page > 0 ? 1 : 0.4 }}
-              >
-                이전
-              </Box>
-
-              {buildPageNumbers(page, totalPages).map((p, idx) =>
-                p === '...' ? (
-                  <span key={`dots-${idx}`} style={{ padding: '0 4px' }}>...</span>
-                ) : (
-                  <Box
-                    key={p}
-                    onClick={() => p !== page && goToPage(p)}
-                    style={{
-                      padding: '10px 14px',
-                      cursor: p === page ? 'default' : 'pointer',
-                      fontWeight: p === page ? 'bold' : 'normal',
-                      textDecoration: p === page ? 'underline' : 'none',
-                    }}
-                  >
-                    {p + 1}
-                  </Box>
-                )
-              )}
-
-              <Box
-                onClick={() => hasNext && goToPage(page + 1)}
-                style={{ cursor: hasNext ? 'pointer' : 'default', opacity: hasNext ? 1 : 0.4 }}
-              >
-                다음
-              </Box>
-            </div>
-          )}
+        <div
+          onClick={() => navigate('/')}
+          className="inline-block mt-5 text-sm text-[#9a9aa2] cursor-pointer transition-colors duration-150 hover:text-[#e8e8ea]"
+        >
+          ← 메인으로
         </div>
 
-        <FilterPanel draftFilters={draftFilters} setDraftFilters={setDraftFilters} onApply={handleApplyFilters} />
+        <div className="mt-3 mb-3 text-sm text-[#9a9aa2]">
+          '{keyword}' 검색 결과{!isKeywordTooShort && !loading && !error && ` (${totalElements}건)`}
+        </div>
+
+        <div className="flex gap-8">
+          <div className="flex-1">
+            <div className="flex justify-end mb-3">
+              <SortDropdown value={sort} onChange={handleSortChange} />
+            </div>
+
+            {isKeywordTooShort && (
+              <div className={emptyBoxClass}>
+                검색어는 {SEARCH_MIN_KEYWORD_LENGTH}자 이상 입력해주세요
+              </div>
+            )}
+            {!isKeywordTooShort && loading && <div className={stateBoxClass}>불러오는 중...</div>}
+            {!isKeywordTooShort && error && (
+              <div className={`${stateBoxClass} text-red-400`}>에러: {error}</div>
+            )}
+            {!isKeywordTooShort && !loading && !error && games.length === 0 && (
+              <div className={emptyBoxClass}>검색 결과가 없습니다</div>
+            )}
+
+            {!isKeywordTooShort && games.map(renderGameRow)}
+
+            {!isKeywordTooShort && !loading && !error && similarGames.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-3 font-bold text-sm text-[#f2f2f4]">유사한 게임</div>
+                {similarGames.map(renderGameRow)}
+              </div>
+            )}
+
+            {!isKeywordTooShort && !loading && !error && totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1.5 mt-6">
+                <div
+                  onClick={() => page > 0 && goToPage(page - 1)}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${page > 0
+                    ? 'cursor-pointer text-[#e8e8ea] hover:bg-[#2a2a31]'
+                    : 'cursor-default opacity-30 text-[#9a9aa2]'
+                    }`}
+                >
+                  이전
+                </div>
+
+                {buildPageNumbers(page, totalPages).map((p, idx) =>
+                  p === '...' ? (
+                    <span key={`dots-${idx}`} className="px-1 text-[#9a9aa2] text-sm">
+                      ...
+                    </span>
+                  ) : (
+                    <div
+                      key={p}
+                      onClick={() => p !== page && goToPage(p)}
+                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${p === page
+                        ? 'font-bold text-white bg-[#2a2a31] cursor-default'
+                        : 'font-normal text-[#9a9aa2] cursor-pointer hover:bg-[#2a2a31] hover:text-[#e8e8ea]'
+                        }`}
+                    >
+                      {p + 1}
+                    </div>
+                  )
+                )}
+
+                <div
+                  onClick={() => hasNext && goToPage(page + 1)}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${hasNext
+                    ? 'cursor-pointer text-[#e8e8ea] hover:bg-[#2a2a31]'
+                    : 'cursor-default opacity-30 text-[#9a9aa2]'
+                    }`}
+                >
+                  다음
+                </div>
+              </div>
+            )}
+          </div>
+
+          <FilterPanel draftFilters={draftFilters} setDraftFilters={setDraftFilters} onApply={handleApplyFilters} />
+        </div>
       </div>
     </div>
   )
