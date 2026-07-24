@@ -50,7 +50,7 @@ export default function DiscordAccountSetupPage() {
 
   if (!setupToken) {
     return (
-      <div style={{ width: 'min(440px, calc(100vw - 40px))', textAlign: 'center' }}>
+      <div style={{ width: 'min(440px, calc(100vw - 40px))', margin: '0 auto', textAlign: 'center' }}>
         <Box>계정 설정 인증이 없습니다. Discord 인증을 다시 진행해주세요.</Box>
         <button
           type="button"
@@ -64,7 +64,7 @@ export default function DiscordAccountSetupPage() {
   }
 
   return (
-    <main style={{ width: 'min(440px, calc(100vw - 40px))', padding: '20px' }}>
+    <main style={{ width: 'min(440px, calc(100vw - 40px))', margin: '0 auto', padding: '20px' }}>
       <Box onClick={() => navigate('/login')} style={{ display: 'inline-block' }}>
         ← 로그인으로
       </Box>

@@ -6,13 +6,18 @@ import SortDropdown from '../shared/components/SortDropdown'
 import FilterPanel from '../shared/components/FilterPanel'
 import WishlistHeartButton from '../shared/components/WishlistHeartButton'
 import { getSession } from '../shared/utils/auth'
-import { DEFAULT_FILTERS, normalizeFiltersForRequest } from '../shared/constants/gameFilters'
+import {
+  appliedFiltersToDraft,
+  filtersFromSearchParams,
+  normalizeFiltersForRequest,
+  writeFiltersToSearchParams,
+} from '../shared/constants/gameFilters'
 import { getHomeData } from '../features/game/api/homeApi'
 import { getAllGames } from '../features/game/api/gameApi'
 import { getMyWishlist } from '../features/wishlist/api/wishlistApi'
 import { useWishlistToggle } from '../features/wishlist/useWishlistToggle'
 
-const NAME_COLUMN_WIDTH = '180px'
+const PRICE_COLUMN_WIDTH = '210px'
 const PAGE_SIZE = 20
 const PAGE_GROUP_SIZE = 10
 
@@ -63,14 +68,31 @@ export default function MainPage() {
 
   const user = getSession()
 
-  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS)
-  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS)
+  // 필터도 tab/sort/page처럼 URL을 단일 소스로 사용한다.
+  // (게임 상세에서 뒤로가기로 돌아오거나 브라우저 자체 뒤로가기를 눌렀을 때도 그대로 복원되어야 하므로)
+  const appliedFilters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams])
+  const filterParamsKey = [
+    searchParams.get('genre'),
+    searchParams.get('priceType'),
+    searchParams.get('minPrice'),
+    searchParams.get('maxPrice'),
+    searchParams.get('minDiscount'),
+    searchParams.get('sale'),
+  ].join('|')
+
+  const [draftFilters, setDraftFilters] = useState(() => appliedFiltersToDraft(appliedFilters))
+
+  // URL의 필터 파라미터가 (뒤로가기 등으로) 외부에서 바뀌면 패널 입력값도 그 값으로 맞춘다.
+  useEffect(() => {
+    setDraftFilters(appliedFiltersToDraft(filtersFromSearchParams(searchParams)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterParamsKey])
 
   const handleApplyFilters = () => {
     const normalized = normalizeFiltersForRequest(draftFilters)
-    setAppliedFilters(normalized)
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
+      writeFiltersToSearchParams(next, normalized)
       next.set('page', '1')
       return next
     })
@@ -182,35 +204,38 @@ export default function MainPage() {
     return (
       <Box
         key={game.appId}
+        noDefaultStyle
         onClick={() => navigate(`/games/${game.appId}`)}
-        className="flex items-center gap-6 mb-2.5 p-3 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+        className="flex items-center gap-6 mb-2.5 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]"
       >
         <div className="w-[120px] h-[64px] rounded-lg overflow-hidden flex-shrink-0 bg-black">
           <img src={game.headerImage} alt={game.name} className="w-full h-full object-cover" />
         </div>
 
-        <div className="flex-1 flex items-center justify-center gap-2 text-sm">
+        <div
+          className="flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-[var(--color-text-heading)] font-medium"
+          title={game.name}
+        >
+          {game.name}
+        </div>
+
+        <div
+          className="flex items-center justify-end gap-2 text-sm flex-shrink-0"
+          style={{ width: PRICE_COLUMN_WIDTH }}
+        >
           {game.discountPercent > 0 ? (
             <>
-              <span className="line-through text-[#7a7a82]">
+              <span className="line-through text-[var(--color-text-tertiary)]">
                 {originalPrice.toLocaleString()}원
               </span>
               <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
-              <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
+              <span className="text-[var(--color-text-heading)] font-semibold">{finalPrice.toLocaleString()}원</span>
             </>
           ) : game.isFree ? (
             <span className="text-green-400 font-semibold">무료</span>
           ) : (
-            <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
+            <span className="text-[var(--color-text-heading)] font-semibold">{finalPrice.toLocaleString()}원</span>
           )}
-        </div>
-
-        <div
-          className="text-right whitespace-nowrap overflow-hidden text-ellipsis text-[#f2f2f4] font-medium"
-          style={{ width: NAME_COLUMN_WIDTH }}
-          title={game.name}
-        >
-          {game.name}
         </div>
 
         <WishlistHeartButton liked={liked} disabled={isPending} onClick={(e) => toggleWishlist(e, game)} />
@@ -279,25 +304,25 @@ export default function MainPage() {
 
   const tabClass = (name) =>
     `px-6 py-2.5 cursor-pointer text-sm transition-colors duration-150 ${tab === name
-      ? 'font-bold text-white border-b-2 border-green-400'
-      : 'font-normal text-[#9a9aa2] border-b-2 border-transparent hover:text-[#e8e8ea]'
+      ? 'font-bold text-[var(--color-text-heading)] border-b-2 border-green-400'
+      : 'font-normal text-[var(--color-text-secondary)] border-b-2 border-transparent hover:text-[var(--color-text-primary)]'
     }`
 
   const pageButtonClass = (disabled) =>
     `px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${disabled
-      ? 'cursor-default opacity-30 text-[#9a9aa2]'
-      : 'cursor-pointer text-[#e8e8ea] hover:bg-[#2a2a31]'
+      ? 'cursor-default opacity-30 text-[var(--color-text-secondary)]'
+      : 'cursor-pointer text-[var(--color-text-primary)] hover:bg-[var(--color-bg-row-hover)]'
     }`
 
-  const stateBoxClass = 'mb-2.5 p-4 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-center text-[#9a9aa2] text-sm'
+  const stateBoxClass = 'mb-2.5 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-center text-[var(--color-text-secondary)] text-sm'
 
   return (
-    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea]">
+    <div className="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-primary)]">
       <div className="max-w-[1400px] mx-auto p-5">
         <SearchTopBar />
 
         <div className="flex justify-center mt-8">
-          <div className="flex gap-1 border-b border-[#2c2c33]">
+          <div className="flex gap-1 border-b border-[var(--color-border)]">
             <div className={tabClass('all')} onClick={() => setTab('all')}>
               전체 게임
             </div>
@@ -311,7 +336,7 @@ export default function MainPage() {
         </div>
 
         <div className="flex gap-8 mt-6">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex justify-end mb-3">
               <SortDropdown value={sort} onChange={setSort} hidePopularLabel={tab !== 'top100'} />
             </div>
@@ -361,8 +386,8 @@ export default function MainPage() {
                           key={p}
                           onClick={() => setAllGamesPage(p)}
                           className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-colors duration-150 ${p === allGamesPage
-                            ? 'font-bold text-white bg-[#2a2a31]'
-                            : 'font-normal text-[#9a9aa2] hover:bg-[#2a2a31] hover:text-[#e8e8ea]'
+                            ? 'font-bold text-[var(--color-text-heading)] bg-[var(--color-bg-row-hover)]'
+                            : 'font-normal text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-row-hover)] hover:text-[var(--color-text-primary)]'
                             }`}
                         >
                           {p}
@@ -392,7 +417,7 @@ export default function MainPage() {
                 {wishlistLoading && <div className={stateBoxClass}>불러오는 중...</div>}
                 {wishlistError && <div className={`${stateBoxClass} text-red-400`}>에러: {wishlistError}</div>}
                 {!wishlistLoading && !wishlistError && displayedWishlist.length === 0 && (
-                  <div className="h-[300px] flex items-center justify-center rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-[#9a9aa2] text-sm">
+                  <div className="h-[300px] flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] text-sm">
                     찜한 게임이 없습니다
                   </div>
                 )}
