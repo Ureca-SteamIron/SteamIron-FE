@@ -2,7 +2,8 @@ import axiosClient from '../../../shared/api/axiosClient'
 import { getSession } from '../../../shared/utils/auth'
 
 // BE GameDetailResponse: { appId, name, headerImage, originalPrice, finalPrice,
-//   discountPercent, description, isWishlisted, aiScore, aiExplanation }
+//   discountPercent, description, isWishlisted, aiScore }
+// AI 요약(aiExplanation)은 Gemini 호출 때문에 느려서(수 초) 별도 엔드포인트로 분리되어 있다 → getAiSummary().
 // userId는 GameController가 인증 컨텍스트가 아닌 쿼리 파라미터로 받기 때문에 세션에서 꺼내 직접 전달한다.
 export async function getGameDetail(appId) {
   const user = getSession()
@@ -24,6 +25,18 @@ export async function getGameDetail(appId) {
     finalPrice: game.finalPrice ?? 0,
     discountPercent: game.discountPercent ?? 0,
   }
+}
+
+// BE GET /api/games/{appId}/ai-summary: { aiExplanation }
+// 게임 상세와 병렬로 호출해서, 상세 화면은 먼저 띄우고 AI 요약만 별도로 로딩 표시한다.
+export async function getAiSummary(appId) {
+  const { data } = await axiosClient.get(`/api/games/${appId}/ai-summary`)
+
+  if (!data.success) {
+    throw new Error(data.message ?? 'AI 요약 조회 실패')
+  }
+
+  return data.data.aiExplanation
 }
 
 // getHomeData와 동일한 이유로 가격 null을 여기서 한 번에 0 처리

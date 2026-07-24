@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FaBell, FaBellSlash, FaSteam } from 'react-icons/fa'
 import { HiSparkles } from 'react-icons/hi2'
 import Box from '../shared/components/Box'
-import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
+import { getAiSummary, getGameDetail, refreshGame } from '../features/game/api/gameApi'
 import {
   createAlert,
   deleteAlert,
@@ -60,6 +60,11 @@ export default function GameDetailPage() {
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // AI 요약은 Gemini 호출 때문에 느려서(수 초) 게임 상세와 별도 엔드포인트로 분리했다.
+  // 상세 화면은 먼저 띄우고, 이건 병렬로 불러오면서 도착 전까지 "요약 중..." 문구를 보여준다.
+  const [aiSummary, setAiSummary] = useState(null)
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(true)
 
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState(null)
@@ -194,6 +199,8 @@ export default function GameDetailPage() {
         setGame(data)
         setLastRefreshAt(gameId, Date.now())
         recalcCooldown()
+        // 가격/할인이 바뀌었을 수 있으니 AI 요약도 다시 불러온다.
+        loadAiSummary()
       })
       .catch((err) => setRefreshError(err.response?.data?.message ?? err.message))
       .finally(() => setRefreshing(false))
@@ -226,6 +233,34 @@ export default function GameDetailPage() {
     return () => {
       cancelled = true
     }
+  }, [gameId])
+
+  const loadAiSummary = () => {
+    let cancelled = false
+    setAiSummaryLoading(true)
+    setAiSummary(null)
+
+    getAiSummary(gameId)
+      .then((text) => {
+        if (!cancelled) setAiSummary(text)
+      })
+      .catch(() => {
+        if (!cancelled) setAiSummary('AI 요약을 불러오는 데 실패했습니다.')
+      })
+      .finally(() => {
+        if (!cancelled) setAiSummaryLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }
+
+  // 게임 상세 조회와 완전히 독립적으로(병렬로) 불러온다 — 상세 응답을 기다리지 않는다.
+  useEffect(() => {
+    const cancel = loadAiSummary()
+    return cancel
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId])
 
   const isRefreshDisabled = refreshing || cooldownSec > 0
@@ -422,7 +457,7 @@ export default function GameDetailPage() {
                   </div>
 
                   <p className="relative text-sm leading-relaxed text-[var(--color-text-primary)] whitespace-pre-line">
-                    {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
+                    {aiSummaryLoading ? 'AI가 요약을 만드는 중...' : aiSummary}
                   </p>
                 </div>
               </div>
