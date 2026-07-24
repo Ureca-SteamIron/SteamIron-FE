@@ -14,6 +14,7 @@ import {
 import AlertForm from '../features/alert/components/AlertForm'
 import { getSession } from '../shared/utils/auth'
 import CommentSection from '../features/comment/components/CommentSection'
+import PriceHistoryChart from '../features/game/components/PriceHistoryChart'
 
 const REFRESH_COOLDOWN_MS = 10 * 60 * 1000 // 10분
 const REFRESH_STORAGE_KEY = 'steamiron.lastRefreshAt'
@@ -401,8 +402,9 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            <div className={`${cardClass} h-[220px] mt-6 flex items-center justify-center text-sm text-[var(--color-text-secondary)]`}>
-              가격 변동 (할인) 차트
+            <div className={`${cardClass} mt-6 p-4`}>
+              <div className="mb-2.5 text-sm text-[var(--color-text-secondary)]">가격 변동 (할인율)</div>
+              <PriceHistoryChart gameId={gameId} />
             </div>
 
             <div className="relative mt-6">

@@ -68,6 +68,18 @@ export function getAllGames({ genre, priceType, minPrice, maxPrice, minDiscount,
     .then((res) => res.data.data) // ApiResponse.data = PageResponse
 }
 
+// BE GET /api/games/{appId}/price-history: 가격 변동 이벤트를 시간 오름차순으로 반환.
+// 각 point = { price, discountPercent, recordedAt }. 배치가 변동 있을 때만 기록해 포인트는 듬성듬성하다.
+export async function getPriceHistory(appId) {
+  const { data } = await axiosClient.get(`/api/games/${appId}/price-history`)
+
+  if (!data.success) {
+    throw new Error(data.message ?? '가격 히스토리 조회 실패')
+  }
+
+  return data.data ?? []
+}
+
 // BE POST /api/games/{appId}/refresh: Steam API에서 최신 정보를 가져와 game 테이블 갱신 후
 // 갱신된 GameDetailResponse를 그대로 반환한다. getGameDetail과 동일한 응답 모양이라 null 가격 처리도 동일하게 적용.
 export async function refreshGame(appId) {
