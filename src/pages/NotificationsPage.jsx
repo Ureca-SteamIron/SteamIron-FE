@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaBell, FaDiscord } from 'react-icons/fa'
 import Box from '../shared/components/Box'
@@ -13,6 +13,7 @@ import {
 } from '../features/notification/api/notificationApi'
 
 const PAGE_SIZE = 20
+const DISCORD_INVITE_SEEN_KEY = 'steamiron.discord-invite-seen'
 
 function formatPrice(price) {
   return price == null ? '-' : `${price.toLocaleString()}원`
@@ -87,6 +88,14 @@ export default function NotificationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const openDiscordInvite = useCallback(() => {
+    setDiscordInviteOpen(true)
+  }, [])
+
+  const closeDiscordInvite = useCallback(() => {
+    setDiscordInviteOpen(false)
+  }, [])
+
   const handleDiscordToggle = async () => {
     const next = !discordEnabled
     setDiscordUpdating(true)
@@ -94,7 +103,16 @@ export default function NotificationsPage() {
     try {
       await updateDiscordNotificationSetting(next)
       setDiscordEnabled(next)
-      if (next) setDiscordInviteOpen(true)
+
+      if (next) {
+        const inviteSeenKey = `${DISCORD_INVITE_SEEN_KEY}:${user.userId}`
+        const hasSeenInvite = localStorage.getItem(inviteSeenKey) === 'true'
+
+        if (!hasSeenInvite) {
+          localStorage.setItem(inviteSeenKey, 'true')
+          openDiscordInvite()
+        }
+      }
     } catch (err) {
       alert(err.response?.data?.message ?? err.message)
     } finally {
@@ -154,7 +172,7 @@ export default function NotificationsPage() {
           </h1>
         </div>
 
-        <div className={`${cardClass} mt-5 p-5 flex items-center flex-wrap gap-3`}>
+      <div className={`${cardClass} mt-10 p-5 flex items-center flex-wrap gap-3`}>
           <FaDiscord size={22} className="text-[var(--color-text-secondary)] flex-shrink-0" />
           <span className="font-bold text-sm text-[var(--color-text-heading)]">Discord 알림 받기</span>
 
@@ -174,16 +192,51 @@ export default function NotificationsPage() {
             />
           </div>
 
+          <div className="group relative inline-flex flex-shrink-0">
+            <button
+              type="button"
+              aria-label="Discord 알림 연결 방법 보기"
+              aria-describedby="discord-help-tooltip"
+              aria-haspopup="dialog"
+              onClick={openDiscordInvite}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-secondary)] cursor-help transition-colors duration-150 hover:border-[var(--color-border-hover)] hover:bg-[var(--color-bg-surface-alt)] hover:text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400"
+            >
+              ?
+            </button>
+
+            <div
+              id="discord-help-tooltip"
+              role="tooltip"
+              className="pointer-events-none absolute top-[calc(100%+14px)] left-1/2 z-20 w-64 -translate-x-1/2 rounded-lg border border-[#dedede] bg-white px-4 py-3 text-left text-[#171717] opacity-0 shadow-[0_12px_32px_rgba(0,0,0,0.35)] transition-opacity duration-150 before:absolute before:-top-[14px] before:left-0 before:h-[14px] before:w-full before:content-[''] group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+            >
+              <strong className="block text-sm font-bold">Discord 알림 연결</strong>
+              <p className="mt-2 text-[13px] leading-5">
+                다리미봇을 추가하면 가격 알림을 Discord DM으로 받을 수 있어요.
+              </p>
+              <button
+                type="button"
+                onClick={openDiscordInvite}
+                className="mt-2 block cursor-pointer text-xs font-semibold text-[#5865f2] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5865f2]"
+              >
+                자세히 보기
+              </button>
+              <span
+                aria-hidden="true"
+                className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-l border-t border-[#dedede] bg-white"
+              />
+            </div>
+          </div>
+
           <span className="w-full text-[13px] text-[var(--color-text-tertiary)]">
             웹 알림은 항상 저장되며, 켜면 같은 알림을 Discord로도 받아요
           </span>
         </div>
 
         {discordInviteOpen && (
-          <DiscordInviteModal onClose={() => setDiscordInviteOpen(false)} />
+          <DiscordInviteModal onClose={closeDiscordInvite} />
         )}
 
-        <div className={`${cardClass} mt-5 p-5`}>
+      <div className={`${cardClass} mt-5 p-5`}>
           <div className="flex items-center justify-between mb-4">
             <strong className="text-[var(--color-text-heading)]">알림 내역</strong>
             {unreadCount > 0 && (
