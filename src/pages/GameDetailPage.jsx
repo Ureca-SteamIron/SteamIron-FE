@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FaBell, FaBellSlash, FaSteam } from 'react-icons/fa'
+import { HiSparkles } from 'react-icons/hi2'
 import Box from '../shared/components/Box'
 import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
 import {
@@ -404,8 +405,25 @@ export default function GameDetailPage() {
               가격 변동 (할인) 차트
             </div>
 
-            <div className={`${cardClass} min-h-[120px] mt-6 flex items-center justify-center text-center text-sm text-[var(--color-text-primary)] p-5`}>
-              {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
+            <div className="relative mt-6">
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-green-400 via-cyan-400 to-violet-400 opacity-40 blur-lg animate-pulse pointer-events-none" />
+
+              <div className="relative rounded-xl p-[1px] bg-gradient-to-r from-green-400/70 via-cyan-400/60 to-violet-400/70">
+                <div className="relative overflow-hidden rounded-[11px] bg-[var(--color-bg-surface)] p-5 min-h-[120px]">
+                  <HiSparkles className="absolute -right-4 -bottom-4 text-[90px] text-green-400/10 pointer-events-none" />
+
+                  <div className="relative flex items-center gap-2 mb-3">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-green-400 via-cyan-400 to-violet-400 text-[var(--color-text-on-accent)] flex-shrink-0">
+                      <HiSparkles size={15} />
+                    </span>
+                    <span className="text-sm font-bold text-[var(--color-text-heading)]">AI 요약</span>
+                  </div>
+
+                  <p className="relative text-sm leading-relaxed text-[var(--color-text-primary)] whitespace-pre-line">
+                    {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <CommentSection gameId={gameId} />

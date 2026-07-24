@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiBell } from 'react-icons/fi'
+import { FiBell, FiSearch } from 'react-icons/fi'
 import Box from './Box'
 import Logo from './Logo'
 import SearchSuggestionsDropdown from './SearchSuggestionsDropdown'
@@ -103,6 +103,11 @@ export default function SearchTopBar({ initialKeyword = '' }) {
               searchError ? 'border-red-500' : 'border-[var(--color-border)] focus-within:border-[var(--color-border-strong)]'
             }`}
           >
+            <FiSearch
+              size={16}
+              onClick={handleSearchSubmit}
+              className="flex-shrink-0 mr-2 text-[var(--color-text-tertiary)] cursor-pointer"
+            />
             <input
               type="text"
               placeholder="게임 이름으로 검색"
