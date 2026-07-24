@@ -7,6 +7,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import DiscordAccountSetupPage from './pages/DiscordAccountSetupPage'
 import SearchResultPage from './pages/SearchResultPage'
+import ThemeToggleButton from './shared/components/ThemeToggleButton'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/me" element={<MyPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
       </Routes>
+      <ThemeToggleButton />
     </BrowserRouter>
   )
 }

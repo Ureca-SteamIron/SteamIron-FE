@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FiBell } from 'react-icons/fi'
 import Box from './Box'
+import Logo from './Logo'
 import SearchSuggestionsDropdown from './SearchSuggestionsDropdown'
 import { getSession } from '../utils/auth'
 import { SEARCH_MIN_KEYWORD_LENGTH, SEARCH_SUGGESTION_LIMIT } from '../constants/gameFilters'
 import { searchGames } from '../../features/game/api/gameApi'
+
+// 검색창/알림/마이페이지 버튼 높이를 통일한다.
+const BAR_HEIGHT = 'h-11'
 
 const SUGGEST_DEBOUNCE_MS = 300
 
@@ -88,12 +93,14 @@ export default function SearchTopBar({ initialKeyword = '' }) {
 
   return (
     <>
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-4 items-center">
+        <Logo onClick={() => navigate('/')} className={`${BAR_HEIGHT} w-auto`} />
+
         <div ref={containerRef} className="relative flex-1 max-w-[600px] mx-auto">
           <Box
             noDefaultStyle
-            className={`flex items-center rounded-xl border bg-[#1b1b1f] px-4 py-2.5 transition-colors duration-150 ${
-              searchError ? 'border-red-500' : 'border-[#2c2c33] focus-within:border-[#4a4a52]'
+            className={`flex items-center ${BAR_HEIGHT} rounded-xl border bg-[var(--color-bg-surface)] px-4 transition-colors duration-150 ${
+              searchError ? 'border-red-500' : 'border-[var(--color-border)] focus-within:border-[var(--color-border-strong)]'
             }`}
           >
             <input
@@ -111,7 +118,7 @@ export default function SearchTopBar({ initialKeyword = '' }) {
               onFocus={() => {
                 if (searchKeyword.trim().length >= SEARCH_MIN_KEYWORD_LENGTH) setShowDropdown(true)
               }}
-              className="w-full bg-transparent border-none outline-none text-sm text-[#e8e8ea] placeholder:text-[#7a7a82]"
+              className="w-full bg-transparent border-none outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
             />
           </Box>
 
@@ -135,21 +142,22 @@ export default function SearchTopBar({ initialKeyword = '' }) {
           <Box
             noDefaultStyle
             onClick={() => navigate('/notifications')}
-            className="rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+            aria-label="알림"
+            className={`flex items-center justify-center ${BAR_HEIGHT} w-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]`}
           >
-            알림
+            <FiBell size={18} />
           </Box>
 
           {user ? (
             <Box
               noDefaultStyle
               onClick={() => navigate('/me')}
-              className="flex items-center gap-2 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+              className={`flex items-center gap-2 ${BAR_HEIGHT} rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 text-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]`}
             >
               {user.avatarUrl ? (
                 <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
               ) : (
-                <div className="w-7 h-7 rounded-full border-2 border-[#3a3a42] bg-[#26262c]" />
+                <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] bg-[var(--color-bg-input)]" />
               )}
               <span>마이페이지</span>
             </Box>
@@ -157,7 +165,7 @@ export default function SearchTopBar({ initialKeyword = '' }) {
             <Box
               noDefaultStyle
               onClick={() => navigate('/login')}
-              className="rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+              className={`flex items-center ${BAR_HEIGHT} rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 text-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]`}
             >
               login (discord)
             </Box>

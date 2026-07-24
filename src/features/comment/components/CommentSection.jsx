@@ -18,7 +18,7 @@ function filterDeleted(comments) {
 }
 
 const textareaClass =
-  'w-full resize-vertical font-[inherit] bg-[#26262c] text-[#e8e8ea] text-sm rounded-lg border border-[#2c2c33] px-3 py-2.5 outline-none placeholder:text-[#7a7a82] focus:border-[#4a4a52]'
+  'w-full resize-vertical font-[inherit] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] text-sm rounded-lg border border-[var(--color-border)] px-3 py-2.5 outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-border-strong)]'
 
 function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDelete, onAdminDelete }) {
   const [replying, setReplying] = useState(false)
@@ -32,22 +32,22 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
 
   return (
     <div
-      className={comment.depth > 0 ? 'pl-6 border-l border-[#2c2c33]' : ''}
+      className={comment.depth > 0 ? 'pl-6 border-l border-[var(--color-border)]' : ''}
       style={{ marginLeft: comment.depth * 24 }}
     >
-      <div className="mt-2.5 p-3.5 rounded-xl border border-[#2c2c33] bg-[#1b1b1f]">
-        <div className="font-bold text-sm text-[#f2f2f4]">{comment.nickname}</div>
-        <div className="mt-1 text-sm text-[#e8e8ea] whitespace-pre-wrap break-words">
+      <div className="mt-2.5 p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
+        <div className="font-bold text-sm text-[var(--color-text-heading)]">{comment.nickname}</div>
+        <div className="mt-1 text-sm text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
           {comment.content}
         </div>
-        <div className="text-xs text-[#7a7a82] mt-1.5">
+        <div className="text-xs text-[var(--color-text-tertiary)] mt-1.5">
           {new Date(comment.createdAt).toLocaleString()}
         </div>
 
         <div className="flex gap-3 mt-2 text-xs">
           {currentUserId && comment.depth === 0 && (
             <span
-              className="cursor-pointer text-[#9a9aa2] transition-colors duration-150 hover:text-[#e8e8ea]"
+              className="cursor-pointer text-[var(--color-text-secondary)] transition-colors duration-150 hover:text-[var(--color-text-primary)]"
               onClick={() => setReplying((v) => !v)}
             >
               답글
@@ -56,13 +56,13 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
           {isMine && (
             <>
               <span
-                className="cursor-pointer text-[#9a9aa2] transition-colors duration-150 hover:text-[#e8e8ea]"
+                className="cursor-pointer text-[var(--color-text-secondary)] transition-colors duration-150 hover:text-[var(--color-text-primary)]"
                 onClick={() => setEditing((v) => !v)}
               >
                 수정
               </span>
               <span
-                className="cursor-pointer text-[#9a9aa2] transition-colors duration-150 hover:text-red-400"
+                className="cursor-pointer text-[var(--color-text-secondary)] transition-colors duration-150 hover:text-red-400"
                 onClick={() => onDelete(comment.id)}
               >
                 삭제
@@ -92,7 +92,7 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
                 onUpdate(comment.id, editText)
                 setEditing(false)
               }}
-              className="inline-block mt-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#0e0e10] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
+              className="inline-block mt-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--color-text-on-accent)] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
             >
               저장
             </div>
@@ -116,7 +116,7 @@ function CommentItem({ comment, currentUserId, isAdmin, onReply, onUpdate, onDel
                 setReplying(false)
                 setExpanded(true)
               }}
-              className="inline-block mt-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#0e0e10] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
+              className="inline-block mt-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--color-text-on-accent)] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
             >
               등록
             </div>
@@ -214,12 +214,12 @@ export default function CommentSection({ gameId }) {
   return (
     <Box
       noDefaultStyle
-      className="mt-6 p-5 rounded-xl border border-[#2c2c33] bg-[#1b1b1f]"
+      className="mt-6 p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
     >
-      <div className="font-bold text-sm text-[#f2f2f4]">커뮤니티 (댓글 / 대댓글)</div>
+      <div className="font-bold text-sm text-[var(--color-text-heading)]">커뮤니티 (댓글 / 대댓글)</div>
 
       {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
-      {loading && <div className="text-[#9a9aa2] text-sm mt-2">불러오는 중...</div>}
+      {loading && <div className="text-[var(--color-text-secondary)] text-sm mt-2">불러오는 중...</div>}
 
       {!loading &&
         comments.map((comment) => (
@@ -248,15 +248,15 @@ export default function CommentSection({ gameId }) {
             onClick={handleSubmit}
             className={`inline-block mt-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
               submitting
-                ? 'cursor-default opacity-50 text-[#0e0e10] bg-green-400'
-                : 'cursor-pointer text-[#0e0e10] bg-green-400 hover:bg-green-300'
+                ? 'cursor-default opacity-50 text-[var(--color-text-on-accent)] bg-green-400'
+                : 'cursor-pointer text-[var(--color-text-on-accent)] bg-green-400 hover:bg-green-300'
             }`}
           >
             {submitting ? '등록 중...' : '등록'}
           </div>
         </div>
       ) : (
-        <div className="mt-4 inline-block text-sm text-[#9a9aa2]">
+        <div className="mt-4 inline-block text-sm text-[var(--color-text-secondary)]">
           로그인 후 댓글을 작성할 수 있습니다.
         </div>
       )}

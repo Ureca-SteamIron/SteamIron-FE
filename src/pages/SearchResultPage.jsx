@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Box from '../shared/components/Box'
 import SearchTopBar from '../shared/components/SearchTopBar'
@@ -6,12 +6,18 @@ import SortDropdown from '../shared/components/SortDropdown'
 import FilterPanel from '../shared/components/FilterPanel'
 import WishlistHeartButton from '../shared/components/WishlistHeartButton'
 import { getSession } from '../shared/utils/auth'
-import { DEFAULT_FILTERS, SEARCH_MIN_KEYWORD_LENGTH, normalizeFiltersForRequest } from '../shared/constants/gameFilters'
+import {
+  SEARCH_MIN_KEYWORD_LENGTH,
+  appliedFiltersToDraft,
+  filtersFromSearchParams,
+  normalizeFiltersForRequest,
+  writeFiltersToSearchParams,
+} from '../shared/constants/gameFilters'
 import { searchGames } from '../features/game/api/gameApi'
 import { getMyWishlist } from '../features/wishlist/api/wishlistApi'
 import { useWishlistToggle } from '../features/wishlist/useWishlistToggle'
 
-const NAME_COLUMN_WIDTH = '180px'
+const PRICE_COLUMN_WIDTH = '210px'
 
 // 페이지 번호 버튼 목록을 만든다. 전부 다 보여주면 페이지가 많을 때(예: 77페이지) 끝없이 늘어지니,
 // 현재 페이지 주변 몇 개 + 처음/끝만 보여주고 나머지는 '...'으로 생략한다.
@@ -65,18 +71,44 @@ export default function SearchResultPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const [sort, setSort] = useState('popular')
-  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS)
-  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS)
+  // 정렬/필터도 tab/sort/page처럼 URL을 단일 소스로 사용한다.
+  // (게임 상세에서 뒤로가기로 돌아오거나 브라우저 자체 뒤로가기를 눌렀을 때도 그대로 복원되어야 하므로)
+  const sort = searchParams.get('sort') || 'popular'
+  const appliedFilters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams])
+  const filterParamsKey = [
+    searchParams.get('genre'),
+    searchParams.get('priceType'),
+    searchParams.get('minPrice'),
+    searchParams.get('maxPrice'),
+    searchParams.get('minDiscount'),
+    searchParams.get('sale'),
+  ].join('|')
+
+  const [draftFilters, setDraftFilters] = useState(() => appliedFiltersToDraft(appliedFilters))
+
+  // URL의 필터 파라미터가 (뒤로가기 등으로) 외부에서 바뀌면 패널 입력값도 그 값으로 맞춘다.
+  useEffect(() => {
+    setDraftFilters(appliedFiltersToDraft(filtersFromSearchParams(searchParams)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterParamsKey])
 
   const handleSortChange = (nextSort) => {
-    setSort(nextSort)
-    setSearchParams({ keyword, page: '0' })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('sort', nextSort)
+      next.set('page', '0')
+      return next
+    })
   }
 
   const handleApplyFilters = () => {
-    setAppliedFilters(normalizeFiltersForRequest(draftFilters))
-    setSearchParams({ keyword, page: '0' })
+    const normalized = normalizeFiltersForRequest(draftFilters)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      writeFiltersToSearchParams(next, normalized)
+      next.set('page', '0')
+      return next
+    })
   }
 
   const [games, setGames] = useState([])
@@ -88,7 +120,11 @@ export default function SearchResultPage() {
   const [error, setError] = useState(null)
 
   const goToPage = (nextPage) => {
-    setSearchParams({ keyword, page: String(nextPage) })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('page', String(nextPage))
+      return next
+    })
   }
 
   useEffect(() => {
@@ -134,7 +170,7 @@ export default function SearchResultPage() {
       <div
         key={game.appId}
         onClick={() => navigate(`/games/${game.appId}`)}
-        className="flex items-center gap-6 mb-2.5 p-3 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+        className="flex items-center gap-6 mb-2.5 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]"
       >
         <div className="w-[120px] h-[64px] rounded-lg overflow-hidden flex-shrink-0 bg-black">
           <img
@@ -144,28 +180,30 @@ export default function SearchResultPage() {
           />
         </div>
 
-        <div className="flex-1 flex items-center justify-center gap-2 text-sm">
+        <div
+          className="flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-[var(--color-text-heading)] font-medium"
+          title={game.name}
+        >
+          {game.name}
+        </div>
+
+        <div
+          className="flex items-center justify-end gap-2 text-sm flex-shrink-0"
+          style={{ width: PRICE_COLUMN_WIDTH }}
+        >
           {game.discountPercent > 0 ? (
             <>
-              <span className="line-through text-[#7a7a82]">
+              <span className="line-through text-[var(--color-text-tertiary)]">
                 {originalPrice.toLocaleString()}원
               </span>
               <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
-              <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
+              <span className="text-[var(--color-text-heading)] font-semibold">{finalPrice.toLocaleString()}원</span>
             </>
           ) : game.isFree ? (
             <span className="text-green-400 font-semibold">무료</span>
           ) : (
-            <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
+            <span className="text-[var(--color-text-heading)] font-semibold">{finalPrice.toLocaleString()}원</span>
           )}
-        </div>
-
-        <div
-          className="text-right whitespace-nowrap overflow-hidden text-ellipsis text-[#f2f2f4] font-medium"
-          style={{ width: NAME_COLUMN_WIDTH }}
-          title={game.name}
-        >
-          {game.name}
         </div>
 
         <WishlistHeartButton
@@ -177,27 +215,27 @@ export default function SearchResultPage() {
     )
   }
 
-  const stateBoxClass = 'mb-2.5 p-4 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-center text-[#9a9aa2] text-sm'
-  const emptyBoxClass = 'h-[200px] flex items-center justify-center rounded-xl border border-[#2c2c33] bg-[#1b1b1f] text-[#9a9aa2] text-sm'
+  const stateBoxClass = 'mb-2.5 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-center text-[var(--color-text-secondary)] text-sm'
+  const emptyBoxClass = 'h-[200px] flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] text-sm'
 
   return (
-    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea]">
+    <div className="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-primary)]">
       <div className="max-w-[1400px] mx-auto p-5">
         <SearchTopBar key={keyword} initialKeyword={keyword} />
 
         <div
           onClick={() => navigate('/')}
-          className="inline-block mt-5 text-sm text-[#9a9aa2] cursor-pointer transition-colors duration-150 hover:text-[#e8e8ea]"
+          className="inline-block mt-5 text-sm text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-[var(--color-text-primary)]"
         >
           ← 메인으로
         </div>
 
-        <div className="mt-3 mb-3 text-sm text-[#9a9aa2]">
+        <div className="mt-3 mb-3 text-sm text-[var(--color-text-secondary)]">
           '{keyword}' 검색 결과{!isKeywordTooShort && !loading && !error && ` (${totalElements}건)`}
         </div>
 
         <div className="flex gap-8">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex justify-end mb-3">
               <SortDropdown value={sort} onChange={handleSortChange} />
             </div>
@@ -219,7 +257,7 @@ export default function SearchResultPage() {
 
             {!isKeywordTooShort && !loading && !error && similarGames.length > 0 && (
               <div className="mt-6">
-                <div className="mb-3 font-bold text-sm text-[#f2f2f4]">유사한 게임</div>
+                <div className="mb-3 font-bold text-sm text-[var(--color-text-heading)]">유사한 게임</div>
                 {similarGames.map(renderGameRow)}
               </div>
             )}
@@ -229,8 +267,8 @@ export default function SearchResultPage() {
                 <div
                   onClick={() => page > 0 && goToPage(page - 1)}
                   className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${page > 0
-                    ? 'cursor-pointer text-[#e8e8ea] hover:bg-[#2a2a31]'
-                    : 'cursor-default opacity-30 text-[#9a9aa2]'
+                    ? 'cursor-pointer text-[var(--color-text-primary)] hover:bg-[var(--color-bg-row-hover)]'
+                    : 'cursor-default opacity-30 text-[var(--color-text-secondary)]'
                     }`}
                 >
                   이전
@@ -238,7 +276,7 @@ export default function SearchResultPage() {
 
                 {buildPageNumbers(page, totalPages).map((p, idx) =>
                   p === '...' ? (
-                    <span key={`dots-${idx}`} className="px-1 text-[#9a9aa2] text-sm">
+                    <span key={`dots-${idx}`} className="px-1 text-[var(--color-text-secondary)] text-sm">
                       ...
                     </span>
                   ) : (
@@ -246,8 +284,8 @@ export default function SearchResultPage() {
                       key={p}
                       onClick={() => p !== page && goToPage(p)}
                       className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${p === page
-                        ? 'font-bold text-white bg-[#2a2a31] cursor-default'
-                        : 'font-normal text-[#9a9aa2] cursor-pointer hover:bg-[#2a2a31] hover:text-[#e8e8ea]'
+                        ? 'font-bold text-[var(--color-text-heading)] bg-[var(--color-bg-row-hover)] cursor-default'
+                        : 'font-normal text-[var(--color-text-secondary)] cursor-pointer hover:bg-[var(--color-bg-row-hover)] hover:text-[var(--color-text-primary)]'
                         }`}
                     >
                       {p + 1}
@@ -258,8 +296,8 @@ export default function SearchResultPage() {
                 <div
                   onClick={() => hasNext && goToPage(page + 1)}
                   className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-150 ${hasNext
-                    ? 'cursor-pointer text-[#e8e8ea] hover:bg-[#2a2a31]'
-                    : 'cursor-default opacity-30 text-[#9a9aa2]'
+                    ? 'cursor-pointer text-[var(--color-text-primary)] hover:bg-[var(--color-bg-row-hover)]'
+                    : 'cursor-default opacity-30 text-[var(--color-text-secondary)]'
                     }`}
                 >
                   다음

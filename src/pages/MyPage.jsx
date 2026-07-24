@@ -8,14 +8,14 @@ import { FaHeart } from 'react-icons/fa'
 import { getMyComments } from '../features/comment/api/commentApi'
 import { deleteComment as deleteMyComment } from '../features/comment/api/commentApi'
 
-const NAME_COLUMN_WIDTH = '180px'
+const PRICE_COLUMN_WIDTH = '210px'
 const HEART_COLUMN_WIDTH = '36px'
 
-const cardClass = 'rounded-xl border border-[#2c2c33] bg-[#1b1b1f]'
+const cardClass = 'rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)]'
 const inputClass =
-  'w-full bg-[#26262c] text-[#e8e8ea] text-sm rounded-lg border border-[#2c2c33] px-3 py-2 outline-none focus:border-[#4a4a52] mt-1.5'
+  'w-full bg-[var(--color-bg-input)] text-[var(--color-text-primary)] text-sm rounded-lg border border-[var(--color-border)] px-3 py-2 outline-none focus:border-[var(--color-border-strong)] mt-1.5'
 const linkButtonClass =
-  'inline-flex items-center rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]'
+  'inline-flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2.5 text-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]'
 
 // 마이페이지: 내 정보 조회/수정 / 관심목록 / 내 커뮤니티 글 / 회원탈퇴 / 로그아웃
 export default function MyPage() {
@@ -128,34 +128,36 @@ export default function MyPage() {
       <div
         key={game.appId}
         onClick={() => navigate(`/games/${game.appId}`)}
-        className="flex items-center gap-6 mt-2.5 p-3 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+        className="flex items-center gap-6 mt-2.5 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]"
       >
         <div className="w-[120px] h-[64px] rounded-lg overflow-hidden flex-shrink-0 bg-black">
           <img src={game.headerImage} alt={game.name} className="w-full h-full object-cover" />
         </div>
 
-        <div className="flex-1 min-w-0 flex items-center justify-center gap-2 text-sm flex-wrap">
+        <div
+          className="flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-[var(--color-text-heading)] font-medium"
+          title={game.name}
+        >
+          {game.name}
+        </div>
+
+        <div
+          className="flex items-center justify-end gap-2 text-sm flex-shrink-0 flex-wrap"
+          style={{ width: PRICE_COLUMN_WIDTH }}
+        >
           {finalPrice === 0 ? (
             <span className="text-green-400 font-semibold">무료</span>
           ) : game.discountPercent > 0 ? (
             <>
-              <span className="line-through text-[#7a7a82]">
+              <span className="line-through text-[var(--color-text-tertiary)]">
                 {originalPrice.toLocaleString()}원
               </span>
               <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
-              <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
+              <span className="text-[var(--color-text-heading)] font-semibold">{finalPrice.toLocaleString()}원</span>
             </>
           ) : (
-            <span className="text-[#f2f2f4] font-semibold">{finalPrice.toLocaleString()}원</span>
+            <span className="text-[var(--color-text-heading)] font-semibold">{finalPrice.toLocaleString()}원</span>
           )}
-        </div>
-
-        <div
-          className="text-right whitespace-nowrap overflow-hidden text-ellipsis text-[#f2f2f4] font-medium"
-          style={{ width: NAME_COLUMN_WIDTH }}
-          title={game.name}
-        >
-          {game.name}
         </div>
 
         <button
@@ -167,7 +169,7 @@ export default function MyPage() {
           }`}
           style={{ width: HEART_COLUMN_WIDTH }}
         >
-          <FaHeart size={18} color="#e74c3c" />
+          <FaHeart size={18} className="text-red-400" />
         </button>
       </div>
     )
@@ -202,7 +204,7 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea] overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-primary)] overflow-x-hidden">
       <div className="w-[1400px] max-w-full mx-auto p-5">
         <div className="flex justify-between">
           <div onClick={() => navigate('/')} className={linkButtonClass}>
@@ -215,33 +217,33 @@ export default function MyPage() {
 
         {/* 내 정보 */}
         <div className={`${cardClass} mt-6 p-5`}>
-          <div className="font-bold text-sm text-[#f2f2f4]">
+          <div className="font-bold text-sm text-[var(--color-text-heading)]">
             내 정보 {user?.username ? `(${user.username})` : ''}
           </div>
           <div className="flex gap-2.5 mt-3">
             {user ? (
               <div
                 onClick={() => (editing ? setEditing(false) : openEdit())}
-                className="px-4 py-2 rounded-lg text-sm text-[#e8e8ea] border border-[#2c2c33] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+                className="px-4 py-2 rounded-lg text-sm text-[var(--color-text-primary)] border border-[var(--color-border)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]"
               >
                 아이디/비밀번호 수정
               </div>
             ) : (
               <div
                 onClick={() => navigate('/login')}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-[#0e0e10] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--color-text-on-accent)] bg-green-400 cursor-pointer transition-colors duration-150 hover:bg-green-300"
               >
                 로그인
               </div>
             )}
-            <div className="px-4 py-2 rounded-lg text-sm text-red-400 border border-[#2c2c33] cursor-pointer transition-colors duration-150 hover:bg-red-400/10 hover:border-red-400/40">
+            <div className="px-4 py-2 rounded-lg text-sm text-red-400 border border-[var(--color-border)] cursor-pointer transition-colors duration-150 hover:bg-red-400/10 hover:border-red-400/40">
               회원탈퇴
             </div>
           </div>
 
           {editing && (
             <div className="mt-4 flex flex-col gap-3 max-w-[360px]">
-              <label className="text-sm text-[#e8e8ea]">
+              <label className="text-sm text-[var(--color-text-primary)]">
                 아이디
                 <input
                   type="text"
@@ -250,7 +252,7 @@ export default function MyPage() {
                   className={inputClass}
                 />
               </label>
-              <label className="text-sm text-[#e8e8ea]">
+              <label className="text-sm text-[var(--color-text-primary)]">
                 현재 비밀번호
                 <input
                   type="password"
@@ -259,9 +261,9 @@ export default function MyPage() {
                   className={inputClass}
                 />
               </label>
-              <label className="text-sm text-[#e8e8ea]">
+              <label className="text-sm text-[var(--color-text-primary)]">
                 새 비밀번호{' '}
-                <span className="text-[#7a7a82] text-xs">(비우면 그대로)</span>
+                <span className="text-[var(--color-text-tertiary)] text-xs">(비우면 그대로)</span>
                 <input
                   type="password"
                   value={newPassword}
@@ -269,7 +271,7 @@ export default function MyPage() {
                   className={inputClass}
                 />
               </label>
-              <label className="text-sm text-[#e8e8ea]">
+              <label className="text-sm text-[var(--color-text-primary)]">
                 새 비밀번호 확인
                 <input
                   type="password"
@@ -283,15 +285,15 @@ export default function MyPage() {
                   onClick={saving ? undefined : handleSave}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
                     saving
-                      ? 'cursor-default opacity-50 text-[#0e0e10] bg-green-400'
-                      : 'cursor-pointer text-[#0e0e10] bg-green-400 hover:bg-green-300'
+                      ? 'cursor-default opacity-50 text-[var(--color-text-on-accent)] bg-green-400'
+                      : 'cursor-pointer text-[var(--color-text-on-accent)] bg-green-400 hover:bg-green-300'
                   }`}
                 >
                   {saving ? '저장 중...' : '저장'}
                 </div>
                 <div
                   onClick={() => setEditing(false)}
-                  className="px-4 py-2 rounded-lg text-sm text-[#e8e8ea] border border-[#2c2c33] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+                  className="px-4 py-2 rounded-lg text-sm text-[var(--color-text-primary)] border border-[var(--color-border)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]"
                 >
                   취소
                 </div>
@@ -299,24 +301,24 @@ export default function MyPage() {
             </div>
           )}
 
-          {msg && <div className="mt-2 text-sm text-[#9a9aa2]">{msg}</div>}
+          {msg && <div className="mt-2 text-sm text-[var(--color-text-secondary)]">{msg}</div>}
         </div>
 
         {/* 관심목록 */}
         <div className={`${cardClass} mt-6 p-5`}>
-          <div className="font-bold text-sm text-[#f2f2f4]">관심목록</div>
+          <div className="font-bold text-sm text-[var(--color-text-heading)]">관심목록</div>
 
           {!user && (
-            <div className="mt-2.5 text-sm text-[#9a9aa2]">로그인이 필요합니다</div>
+            <div className="mt-2.5 text-sm text-[var(--color-text-secondary)]">로그인이 필요합니다</div>
           )}
           {user && wishlistLoading && (
-            <div className="mt-2.5 text-sm text-[#9a9aa2]">불러오는 중...</div>
+            <div className="mt-2.5 text-sm text-[var(--color-text-secondary)]">불러오는 중...</div>
           )}
           {user && wishlistError && (
             <div className="mt-2.5 text-sm text-red-400">에러: {wishlistError}</div>
           )}
           {user && !wishlistLoading && !wishlistError && wishlist.length === 0 && (
-            <div className="mt-2.5 text-sm text-[#9a9aa2]">찜한 게임이 없습니다</div>
+            <div className="mt-2.5 text-sm text-[var(--color-text-secondary)]">찜한 게임이 없습니다</div>
           )}
 
           {user && !wishlistLoading && !wishlistError && wishlist.map(renderWishlistRow)}
@@ -324,21 +326,21 @@ export default function MyPage() {
 
         {/* 내 커뮤니티 글 */}
         <div className={`${cardClass} mt-6 p-5`}>
-          <div className="font-bold text-sm text-[#f2f2f4]">
+          <div className="font-bold text-sm text-[var(--color-text-heading)]">
             내 커뮤니티 글 (내가 쓴 글 / 댓글 목록)
           </div>
 
           {!user && (
-            <div className="mt-2.5 text-sm text-[#9a9aa2]">로그인이 필요합니다</div>
+            <div className="mt-2.5 text-sm text-[var(--color-text-secondary)]">로그인이 필요합니다</div>
           )}
           {user && myCommentsLoading && (
-            <div className="mt-2.5 text-sm text-[#9a9aa2]">불러오는 중...</div>
+            <div className="mt-2.5 text-sm text-[var(--color-text-secondary)]">불러오는 중...</div>
           )}
           {user && myCommentsError && (
             <div className="mt-2.5 text-sm text-red-400">에러: {myCommentsError}</div>
           )}
           {user && !myCommentsLoading && !myCommentsError && myComments.length === 0 && (
-            <div className="mt-2.5 text-sm text-[#9a9aa2]">작성한 댓글이 없습니다</div>
+            <div className="mt-2.5 text-sm text-[var(--color-text-secondary)]">작성한 댓글이 없습니다</div>
           )}
 
           {user &&
@@ -347,21 +349,21 @@ export default function MyPage() {
             myComments.map((comment) => (
               <div
                 key={comment.id}
-                className="flex items-center gap-3 mt-2.5 p-3.5 rounded-xl border border-[#2c2c33] bg-[#22222a]"
+                className="flex items-center gap-3 mt-2.5 p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface-alt)]"
               >
                 <div
                   onClick={() => navigate(`/games/${comment.gameId}`)}
                   className="flex-1 min-w-0 cursor-pointer"
                 >
-                  <div className="text-xs text-[#7a7a82]">{comment.gameName}</div>
-                  <div className="text-sm text-[#e8e8ea] mt-1 truncate">{comment.content}</div>
-                  <div className="text-xs text-[#7a7a82] mt-1">
+                  <div className="text-xs text-[var(--color-text-tertiary)]">{comment.gameName}</div>
+                  <div className="text-sm text-[var(--color-text-primary)] mt-1 truncate">{comment.content}</div>
+                  <div className="text-xs text-[var(--color-text-tertiary)] mt-1">
                     {new Date(comment.createdAt).toLocaleString()}
                   </div>
                 </div>
                 <div
                   onClick={() => handleDeleteMyComment(comment.id)}
-                  className="text-sm text-[#9a9aa2] cursor-pointer transition-colors duration-150 hover:text-red-400 flex-shrink-0"
+                  className="text-sm text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-red-400 flex-shrink-0"
                 >
                   삭제
                 </div>
