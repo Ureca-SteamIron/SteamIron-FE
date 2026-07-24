@@ -21,7 +21,11 @@ export default function WishlistHeartButton({ liked, onClick, disabled }) {
       }}
       aria-label={liked ? '찜 해제' : '찜 추가'}
     >
-      {liked ? <FaHeart size={18} color="#e74c3c" /> : <FaRegHeart size={18} color="#999" />}
+      {liked ? (
+        <FaHeart size={18} className="text-red-400" />
+      ) : (
+        <FaRegHeart size={18} className="text-[var(--color-text-secondary)]" />
+      )}
     </button>
   )
 }

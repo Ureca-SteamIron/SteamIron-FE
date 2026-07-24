@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FaBell, FaBellSlash, FaSteam } from 'react-icons/fa'
 import Box from '../shared/components/Box'
 import { getGameDetail, refreshGame } from '../features/game/api/gameApi'
@@ -40,8 +40,20 @@ function setLastRefreshAt(gameId, timestamp) {
 
 export default function GameDetailPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { gameId } = useParams()
   const user = getSession()
+
+  // 목록(메인/검색 결과)에서 정렬·필터가 적용된 채로 들어왔다면 그 상태 그대로 되돌아가야 하므로
+  // '/'로 새로 이동하지 않고 브라우저 히스토리를 그대로 되짚어간다.
+  // 다만 이 페이지가 히스토리의 첫 진입점(공유 링크 등)이면 뒤로 갈 곳이 없으므로 메인으로 보낸다.
+  const handleBack = () => {
+    if (location.key === 'default') {
+      navigate('/')
+    } else {
+      navigate(-1)
+    }
+  }
 
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -223,24 +235,24 @@ export default function GameDetailPage() {
       ? `${Math.floor(cooldownSec / 60)}:${String(cooldownSec % 60).padStart(2, '0')} 후 가능`
       : '갱신'
 
-  const cardClass = 'rounded-xl border border-[#2c2c33] bg-[#1b1b1f]'
+  const cardClass = 'rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)]'
   const linkButtonClass =
-    'inline-flex items-center gap-2 rounded-xl border border-[#2c2c33] bg-[#1b1b1f] px-4 py-2.5 text-sm text-[#e8e8ea] cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]'
+    'inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2.5 text-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]'
 
   return (
-    <div className="min-h-screen bg-[#0e0e10] text-[#e8e8ea] overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-primary)] overflow-x-hidden">
       <div className="w-[1400px] max-w-full mx-auto p-5">
         <div className="flex justify-between items-center">
-          <div onClick={() => navigate('/')} className={linkButtonClass}>
-            ← 메인으로
+          <div onClick={handleBack} className={linkButtonClass}>
+            ← 뒤로가기
           </div>
           <div className="flex items-center gap-2.5">
             <div
               onClick={handleRefresh}
               className={`rounded-xl border px-4 py-2.5 text-sm transition-colors duration-150 ${
                 isRefreshDisabled
-                  ? 'cursor-default opacity-40 border-[#2c2c33] bg-[#1b1b1f] text-[#9a9aa2]'
-                  : 'cursor-pointer border-[#2c2c33] bg-[#1b1b1f] text-[#e8e8ea] hover:bg-[#22222a] hover:border-[#3a3a42]'
+                  ? 'cursor-default opacity-40 border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)]'
+                  : 'cursor-pointer border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]'
               }`}
             >
               {refreshLabel}
@@ -259,7 +271,7 @@ export default function GameDetailPage() {
         )}
 
         {loading && (
-          <div className={`${cardClass} mt-6 p-4 text-center text-sm text-[#9a9aa2]`}>
+          <div className={`${cardClass} mt-6 p-4 text-center text-sm text-[var(--color-text-secondary)]`}>
             불러오는 중...
           </div>
         )}
@@ -281,7 +293,7 @@ export default function GameDetailPage() {
               </div>
 
               <div className={`${cardClass} flex-1 min-w-0 p-5`}>
-                <div className="text-lg font-bold text-[#f2f2f4]">
+                <div className="text-lg font-bold text-[var(--color-text-heading)]">
                   {game.name}
                   {game.isWishlisted && (
                     <span className="ml-2 text-sm font-normal text-green-400">(찜함)</span>
@@ -291,16 +303,16 @@ export default function GameDetailPage() {
                 <div className="mt-2 text-sm">
                   {game.discountPercent > 0 ? (
                     <span className="flex items-center gap-2">
-                      <span className="line-through text-[#7a7a82]">
+                      <span className="line-through text-[var(--color-text-tertiary)]">
                         {game.originalPrice.toLocaleString()}원
                       </span>
                       <span className="text-green-400 font-semibold">-{game.discountPercent}%</span>
-                      <span className="text-[#f2f2f4] font-semibold">
+                      <span className="text-[var(--color-text-heading)] font-semibold">
                         {game.finalPrice.toLocaleString()}원
                       </span>
                     </span>
                   ) : (
-                    <span className="text-[#f2f2f4] font-semibold">
+                    <span className="text-[var(--color-text-heading)] font-semibold">
                       {game.finalPrice.toLocaleString()}원
                     </span>
                   )}
@@ -309,7 +321,7 @@ export default function GameDetailPage() {
                 {user ? (
                   <div className="mt-4">
                     {loadingAlert ? (
-                      <div className="text-sm text-[#9a9aa2]">알림 설정을 불러오는 중...</div>
+                      <div className="text-sm text-[var(--color-text-secondary)]">알림 설정을 불러오는 중...</div>
                     ) : (
                       <>
                         <div className="flex items-center gap-3">
@@ -321,17 +333,17 @@ export default function GameDetailPage() {
                             title={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
                             className={`flex items-center justify-center rounded-xl border px-3.5 py-2.5 text-xl transition-colors duration-150 ${
                               togglingAlert
-                                ? 'cursor-default opacity-40 border-[#2c2c33] text-[#9a9aa2]'
+                                ? 'cursor-default opacity-40 border-[var(--color-border)] text-[var(--color-text-secondary)]'
                                 : isBellActive
                                   ? 'cursor-pointer border-green-400 text-green-400 hover:bg-green-400/10'
-                                  : 'cursor-pointer border-[#2c2c33] text-[#9a9aa2] hover:border-[#3a3a42] hover:text-[#e8e8ea]'
+                                  : 'cursor-pointer border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]'
                             }`}
                           >
                             {isBellActive ? <FaBell /> : <FaBellSlash />}
                           </button>
                           <span
                             className={`text-sm font-medium ${
-                              isBellActive ? 'text-green-400' : 'text-[#9a9aa2]'
+                              isBellActive ? 'text-green-400' : 'text-[var(--color-text-secondary)]'
                             }`}
                           >
                             {isBellActive ? '가격 알림 ON' : '가격 알림 OFF'}
@@ -340,7 +352,7 @@ export default function GameDetailPage() {
                           {existingAlert?.isActive && !showAlertForm && (
                             <div
                               onClick={() => setShowAlertForm(true)}
-                              className="text-sm text-[#9a9aa2] cursor-pointer transition-colors duration-150 hover:text-[#e8e8ea] underline"
+                              className="text-sm text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-[var(--color-text-primary)] underline"
                             >
                               수정
                             </div>
@@ -348,7 +360,7 @@ export default function GameDetailPage() {
                         </div>
 
                         {existingAlert?.isActive && !showAlertForm && (
-                          <div className="mt-3 text-sm text-[#9a9aa2] space-y-1">
+                          <div className="mt-3 text-sm text-[var(--color-text-secondary)] space-y-1">
                             <div>
                               할인 시작 알림: {existingAlert.discountStartEnabled ? 'ON' : 'OFF'}
                             </div>
@@ -375,7 +387,7 @@ export default function GameDetailPage() {
                         )}
                       </>
                     )}
-                    {alertMsg && <div className="mt-2 text-sm text-[#9a9aa2]">{alertMsg}</div>}
+                    {alertMsg && <div className="mt-2 text-sm text-[var(--color-text-secondary)]">{alertMsg}</div>}
                   </div>
                 ) : (
                   <div
@@ -388,11 +400,11 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            <div className={`${cardClass} h-[220px] mt-6 flex items-center justify-center text-sm text-[#9a9aa2]`}>
+            <div className={`${cardClass} h-[220px] mt-6 flex items-center justify-center text-sm text-[var(--color-text-secondary)]`}>
               가격 변동 (할인) 차트
             </div>
 
-            <div className={`${cardClass} min-h-[120px] mt-6 flex items-center justify-center text-center text-sm text-[#e8e8ea] p-5`}>
+            <div className={`${cardClass} min-h-[120px] mt-6 flex items-center justify-center text-center text-sm text-[var(--color-text-primary)] p-5`}>
               {game.aiExplanation ?? 'AI 요약 (게임정보, 할인 정보 등)'}
             </div>
 

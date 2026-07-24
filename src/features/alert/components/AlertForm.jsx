@@ -56,9 +56,9 @@ export default function AlertForm({
   return (
     <Box
       noDefaultStyle
-      className="mt-2.5 flex flex-col gap-3.5 p-4 rounded-xl border border-[#2c2c33] bg-[#1b1b1f]"
+      className="mt-2.5 flex flex-col gap-3.5 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
     >
-      <label className="flex items-center gap-2 cursor-pointer text-sm text-[#e8e8ea]">
+      <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-primary)]">
         <input
           type="checkbox"
           checked={discountStartEnabled}
@@ -68,9 +68,9 @@ export default function AlertForm({
         할인 시작하면 알림
       </label>
 
-      <div className="border-t border-[#2c2c33]" />
+      <div className="border-t border-[var(--color-border)]" />
 
-      <label className="flex items-center gap-2 cursor-pointer text-sm text-[#e8e8ea]">
+      <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-primary)]">
         <input
           type="checkbox"
           checked={targetDiscountEnabled}
@@ -82,7 +82,7 @@ export default function AlertForm({
       </label>
 
       {!targetPriceAvailable && (
-        <div className="text-[#7a7a82] text-sm">
+        <div className="text-[var(--color-text-tertiary)] text-sm">
           무료 게임은 기준 가격이 없어 지정 할인율 목표가를 계산할 수 없습니다.
         </div>
       )}
@@ -96,11 +96,11 @@ export default function AlertForm({
             value={discountRate}
             disabled={!targetActive}
             onChange={(event) => handleRateChange(event.target.value)}
-            className="w-[70px] bg-[#26262c] text-[#e8e8ea] text-sm rounded-lg border border-[#2c2c33] px-2.5 py-1.5 outline-none focus:border-[#4a4a52] disabled:cursor-default"
+            className="w-[70px] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] text-sm rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 outline-none focus:border-[var(--color-border-strong)] disabled:cursor-default"
           />
-          <span className="text-[#e8e8ea]">% 이상 할인 시</span>
+          <span className="text-[var(--color-text-primary)]">% 이상 할인 시</span>
           {computedTarget != null && (
-            <span className="text-[#9a9aa2]">→ 목표가 약 {computedTarget.toLocaleString()}원</span>
+            <span className="text-[var(--color-text-secondary)]">→ 목표가 약 {computedTarget.toLocaleString()}원</span>
           )}
         </div>
 
@@ -116,7 +116,7 @@ export default function AlertForm({
             aria-label="지정 할인율"
             className={`w-full accent-green-400 ${targetActive ? 'cursor-pointer' : 'cursor-default'}`}
           />
-          <div className="flex justify-between text-[#7a7a82] text-xs mt-1">
+          <div className="flex justify-between text-[var(--color-text-tertiary)] text-xs mt-1">
             <span>0%</span>
             <span>100%</span>
           </div>
@@ -128,8 +128,8 @@ export default function AlertForm({
           onClick={submitting ? undefined : handleSubmit}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
             submitting
-              ? 'cursor-default opacity-50 text-[#0e0e10] bg-green-400'
-              : 'cursor-pointer text-[#0e0e10] bg-green-400 hover:bg-green-300'
+              ? 'cursor-default opacity-50 text-[var(--color-text-on-accent)] bg-green-400'
+              : 'cursor-pointer text-[var(--color-text-on-accent)] bg-green-400 hover:bg-green-300'
           }`}
         >
           {submitting ? '저장 중...' : '저장'}
@@ -137,7 +137,7 @@ export default function AlertForm({
         {onCancel && (
           <div
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-sm text-[#e8e8ea] border border-[#2c2c33] bg-transparent cursor-pointer transition-colors duration-150 hover:bg-[#22222a] hover:border-[#3a3a42]"
+            className="px-4 py-2 rounded-lg text-sm text-[var(--color-text-primary)] border border-[var(--color-border)] bg-transparent cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]"
           >
             취소
           </div>

@@ -2,12 +2,80 @@
 
 :root {
   font-family: system-ui, "Segoe UI", "Malgun Gothic", sans-serif;
-  color-scheme: light dark;
+  color-scheme: dark;
+
+  --color-bg-page: #0e0e10;
+  --color-bg-surface: #1b1b1f;
+  --color-bg-surface-alt: #22222a;
+  --color-bg-row-hover: #2a2a31;
+  --color-bg-input: #26262c;
+
+  --color-border: #2c2c33;
+  --color-border-hover: #3a3a42;
+  --color-border-strong: #4a4a52;
+
+  --color-text-primary: #e8e8ea;
+  --color-text-heading: #f2f2f4;
+  --color-text-secondary: #9a9aa2;
+  --color-text-tertiary: #7a7a82;
+  --color-text-on-accent: #0e0e10;
+
+  --gradient-a: rgba(74, 222, 128, 0.10);
+  --gradient-b: rgba(74, 222, 128, 0.08);
+  --gradient-c: rgba(90, 130, 255, 0.06);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg-page: #f4f4f6;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-alt: #ececee;
+  --color-bg-row-hover: #e3e3e7;
+  --color-bg-input: #f0f0f2;
+
+  --color-border: #dcdce0;
+  --color-border-hover: #c7c7cd;
+  --color-border-strong: #b3b3ba;
+
+  --color-text-primary: #1c1c1f;
+  --color-text-heading: #0b0b0d;
+  --color-text-secondary: #5b5b63;
+  --color-text-tertiary: #75757d;
+  --color-text-on-accent: #0e0e10;
+
+  --gradient-a: rgba(74, 222, 128, 0.12);
+  --gradient-b: rgba(74, 222, 128, 0.10);
+  --gradient-c: rgba(90, 130, 255, 0.08);
+}
+
+html {
+  background-color: var(--color-bg-page);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
+  background-color: var(--color-bg-page);
+  background-image:
+    radial-gradient(ellipse 900px 700px at 0% 20%, var(--gradient-a), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 100% 80%, var(--gradient-b), transparent 60%),
+    radial-gradient(ellipse 1000px 800px at 50% -10%, var(--gradient-c), transparent 60%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  transition: background-color 0.2s ease;
+}
+
+/* body가 grid + place-items:center이면 컬럼 트랙이 기본 auto라서 두 가지 문제가 생긴다.
+   1) #root(유일한 grid item)가 내용물 크기에 맞춰 줄어든다(shrink-to-fit) -> 정렬 결과에
+      따라 표시되는 데이터가 달라지면 목록 폭이 들쭉날쭉해진다.
+   2) 반대로 내부에 max-w-[1400px] 같은 넓은 콘텐츠가 있으면 auto 트랙이 뷰포트보다
+      넓게(예: 1400px) 늘어나 버려서 가로 스크롤이 생긴다.
+   grid-template-columns를 minmax(0, 1fr)로 고정해 트랙 자체가 뷰포트 폭을 절대 넘지도,
+   줄어들지도 않게 하고, #root에 width:100%를 줘서 그 트랙을 항상 꽉 채우게 한다. */
+#root {
+  width: 100%;
 }

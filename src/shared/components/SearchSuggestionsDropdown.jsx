@@ -17,9 +17,12 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
   const suggestions = buildSuggestionList(games, similarGames)
 
   return (
-    <Box className="absolute top-full left-0 right-0 mt-2 z-10 p-1.5 bg-[#1b1b1f] rounded-xl border border-[#2c2c33] shadow-2xl shadow-black/45 text-[#e8e8ea] max-h-[480px] overflow-y-auto">
+    <Box
+      noDefaultStyle
+      className="absolute top-full left-0 right-0 mt-2 z-10 p-1.5 bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] shadow-2xl shadow-black/45 text-[var(--color-text-primary)] max-h-[480px] overflow-y-auto"
+    >
       {loading && (
-        <div className="p-4 text-center text-[#9a9aa2] text-sm">검색 중...</div>
+        <div className="p-4 text-center text-[var(--color-text-secondary)] text-sm">검색 중...</div>
       )}
 
       {/* 네트워크/서버 오류와 "진짜 0건"을 구분해서 보여준다 */}
@@ -30,7 +33,7 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
       )}
 
       {!loading && !error && suggestions.length === 0 && (
-        <div className="p-4 text-center text-[#9a9aa2] text-sm">
+        <div className="p-4 text-center text-[var(--color-text-secondary)] text-sm">
           '{keyword}' 검색 결과가 없습니다
         </div>
       )}
@@ -41,7 +44,7 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
           <div
             key={game.appId}
             onClick={() => onSelectGame(game.appId)}
-            className="flex items-center gap-3 p-2 cursor-pointer rounded-lg transition-colors duration-150 hover:bg-[#2a2a31]"
+            className="flex items-center gap-3 p-2 cursor-pointer rounded-lg transition-colors duration-150 hover:bg-[var(--color-bg-row-hover)]"
           >
             <div className="w-16 h-9 overflow-hidden flex-shrink-0 rounded-md bg-black">
               <img
@@ -51,13 +54,13 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
               />
             </div>
 
-            <div className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-[#f2f2f4]">
+            <div className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-[var(--color-text-heading)]">
               {game.name}
             </div>
 
             <div
               className={`flex-shrink-0 text-[13px] font-semibold ${
-                game.finalPrice === 0 ? 'text-green-400' : 'text-[#e8e8ea]'
+                game.finalPrice === 0 ? 'text-green-400' : 'text-[var(--color-text-primary)]'
               }`}
             >
               {game.finalPrice === 0 ? '무료' : `${game.finalPrice.toLocaleString()}원`}
@@ -68,7 +71,7 @@ export default function SearchSuggestionsDropdown({ keyword, games, similarGames
       {!loading && (
         <div
           onClick={onViewAll}
-          className="mt-1 p-2.5 text-center cursor-pointer font-semibold text-[13px] text-[#f2f2f4] bg-[#26262c] rounded-lg transition-colors duration-150 hover:bg-[#33333b]"
+          className="mt-1 p-2.5 text-center cursor-pointer font-semibold text-[13px] text-[var(--color-text-heading)] bg-[var(--color-bg-input)] rounded-lg transition-colors duration-150 hover:bg-[var(--color-bg-row-hover)]"
         >
           '{keyword}' 검색 결과 전체 보기
         </div>

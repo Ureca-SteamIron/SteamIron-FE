@@ -50,3 +50,74 @@ export function normalizeFiltersForRequest(draftFilters) {
     sale: draftFilters.sale,
   }
 }
+
+// 적용된 필터를 URL의 단일 소스로 삼기 위한 직렬화/역직렬화.
+// (게임 상세에서 뒤로가기로 돌아왔을 때, 혹은 브라우저 자체 뒤로가기를 눌렀을 때도
+//  정렬·페이지처럼 필터도 URL에서 그대로 복원되어야 컴포넌트가 리마운트돼도 초기화되지 않는다.)
+export function filtersFromSearchParams(searchParams) {
+  const minPriceRaw = searchParams.get('minPrice')
+  const maxPriceRaw = searchParams.get('maxPrice')
+
+  return {
+    genre: searchParams.get('genre') || DEFAULT_FILTERS.genre,
+    priceType: searchParams.get('priceType') || DEFAULT_FILTERS.priceType,
+    minPrice: minPriceRaw === null ? undefined : Number(minPriceRaw),
+    maxPrice: maxPriceRaw === null ? undefined : Number(maxPriceRaw),
+    minDiscount: searchParams.has('minDiscount') ? Number(searchParams.get('minDiscount')) : DEFAULT_FILTERS.minDiscount,
+    sale: searchParams.get('sale') === 'true',
+  }
+}
+
+// normalizeFiltersForRequest가 만든(숫자 변환된) 필터를 URLSearchParams에 반영한다.
+// 기본값과 같은 항목은 URL을 깔끔하게 유지하기 위해 파라미터 자체를 지운다.
+export function writeFiltersToSearchParams(params, appliedFilters) {
+  if (appliedFilters.genre && appliedFilters.genre !== DEFAULT_FILTERS.genre) {
+    params.set('genre', appliedFilters.genre)
+  } else {
+    params.delete('genre')
+  }
+
+  if (appliedFilters.priceType && appliedFilters.priceType !== DEFAULT_FILTERS.priceType) {
+    params.set('priceType', appliedFilters.priceType)
+  } else {
+    params.delete('priceType')
+  }
+
+  if (appliedFilters.minPrice !== undefined) {
+    params.set('minPrice', String(appliedFilters.minPrice))
+  } else {
+    params.delete('minPrice')
+  }
+
+  if (appliedFilters.maxPrice !== undefined) {
+    params.set('maxPrice', String(appliedFilters.maxPrice))
+  } else {
+    params.delete('maxPrice')
+  }
+
+  if (appliedFilters.minDiscount) {
+    params.set('minDiscount', String(appliedFilters.minDiscount))
+  } else {
+    params.delete('minDiscount')
+  }
+
+  if (appliedFilters.sale) {
+    params.set('sale', 'true')
+  } else {
+    params.delete('sale')
+  }
+
+  return params
+}
+
+// URL에서 복원한 appliedFilters(숫자/undefined) -> FilterPanel 입력값(문자열 포함)으로 되돌린다.
+export function appliedFiltersToDraft(appliedFilters) {
+  return {
+    genre: appliedFilters.genre,
+    priceType: appliedFilters.priceType,
+    minPrice: appliedFilters.minPrice === undefined ? '' : String(appliedFilters.minPrice),
+    maxPrice: appliedFilters.maxPrice === undefined ? '' : String(appliedFilters.maxPrice),
+    minDiscount: appliedFilters.minDiscount ?? 0,
+    sale: appliedFilters.sale,
+  }
+}
