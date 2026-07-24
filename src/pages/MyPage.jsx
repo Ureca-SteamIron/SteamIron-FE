@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FaBell, FaHeart } from 'react-icons/fa'
 import { FiBell, FiHeart, FiMessageSquare, FiUser } from 'react-icons/fi'
 import { clearSession, getSession } from '../shared/utils/auth'
-import { getMyAccount, updateCredentials } from '../features/user/api/userApi'
+import { getMyAccount, updateCredentials, withdraw } from '../features/user/api/userApi'
 import { getMyWishlist, removeWishlist } from '../features/wishlist/api/wishlistApi'
 import { deleteComment as deleteMyComment, getMyComments } from '../features/comment/api/commentApi'
 import { deleteAlert, getMyAlerts, setAlertActive, updateAlert } from '../features/alert/api/alertApi'
@@ -47,6 +47,30 @@ export default function MyPage() {
   const handleLogout = () => {
     clearSession()
     navigate('/')
+  }
+
+  // 회원 탈퇴: 되돌릴 수 없으므로 확인 후 진행. 성공하면 로그아웃과 동일하게 세션 정리 후 메인으로.
+  const [withdrawing, setWithdrawing] = useState(false)
+  const handleWithdraw = () => {
+    if (withdrawing) return
+    const confirmed = window.confirm(
+      '정말 탈퇴하시겠습니까?\n' +
+        '관심목록·알림 등 내 데이터는 삭제되며, 작성한 댓글은 "알 수 없는 사용자"로 남습니다.\n' +
+        '이 작업은 되돌릴 수 없습니다.'
+    )
+    if (!confirmed) return
+
+    setWithdrawing(true)
+    withdraw()
+      .then(() => {
+        alert('탈퇴가 완료되었습니다.')
+        clearSession()
+        navigate('/')
+      })
+      .catch((err) => {
+        alert(err.response?.data?.message ?? err.message)
+        setWithdrawing(false)
+      })
   }
 
   const [accountLoading, setAccountLoading] = useState(true)
@@ -470,8 +494,13 @@ export default function MyPage() {
             {msg && <div className="mt-2 text-sm text-[var(--color-text-secondary)]">{msg}</div>}
 
             <div className="flex items-center justify-between mt-4">
-              <div className="px-3.5 py-1.5 rounded-lg text-sm text-red-400 border border-[var(--color-border)] cursor-pointer transition-colors duration-150 hover:bg-red-400/10 hover:border-red-400/40">
-                회원탈퇴
+              <div
+                onClick={withdrawing ? undefined : handleWithdraw}
+                className={`px-3.5 py-1.5 rounded-lg text-sm text-red-400 border border-[var(--color-border)] transition-colors duration-150 hover:bg-red-400/10 hover:border-red-400/40 ${
+                  withdrawing ? 'cursor-default opacity-50' : 'cursor-pointer'
+                }`}
+              >
+                {withdrawing ? '탈퇴 중...' : '회원탈퇴'}
               </div>
               <div
                 onClick={saving ? undefined : handleSave}
