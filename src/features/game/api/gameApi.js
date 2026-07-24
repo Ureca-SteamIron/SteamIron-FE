@@ -2,7 +2,7 @@ import axiosClient from '../../../shared/api/axiosClient'
 import { getSession } from '../../../shared/utils/auth'
 
 // BE GameDetailResponse: { appId, name, headerImage, originalPrice, finalPrice,
-//   discountPercent, description, isWishlisted, aiScore }
+//   discountPercent, isFree, description, isWishlisted, aiScore }
 // AI 요약(aiExplanation)은 Gemini 호출 때문에 느려서(수 초) 별도 엔드포인트로 분리되어 있다 → getAiSummary().
 // userId는 GameController가 인증 컨텍스트가 아닌 쿼리 파라미터로 받기 때문에 세션에서 꺼내 직접 전달한다.
 export async function getGameDetail(appId) {

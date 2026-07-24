@@ -111,7 +111,7 @@ export default function GameDetailPage() {
   }
 
   const handleBellToggle = () => {
-    if (togglingAlert) return
+    if (togglingAlert || game?.isFree) return
 
     if (!existingAlert) {
       setShowAlertForm((current) => !current)
@@ -264,7 +264,8 @@ export default function GameDetailPage() {
   }, [gameId])
 
   const isRefreshDisabled = refreshing || cooldownSec > 0
-  const isBellActive = existingAlert ? existingAlert.isActive : showAlertForm
+  const isFreeGame = game?.isFree === true
+  const isBellActive = !isFreeGame && (existingAlert ? existingAlert.isActive : showAlertForm)
 
   const refreshLabel = refreshing
     ? '갱신 중...'
@@ -365,12 +366,24 @@ export default function GameDetailPage() {
                           <button
                             type="button"
                             onClick={handleBellToggle}
-                            disabled={togglingAlert}
-                            aria-label={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
-                            title={isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'}
+                            disabled={togglingAlert || isFreeGame}
+                            aria-label={
+                              isFreeGame
+                                ? '무료 게임은 알림을 설정할 수 없습니다'
+                                : isBellActive
+                                  ? '가격 알림 끄기'
+                                  : '가격 알림 켜기'
+                            }
+                            title={
+                              isFreeGame
+                                ? '무료 게임은 알림을 설정할 수 없습니다'
+                                : isBellActive
+                                  ? '가격 알림 끄기'
+                                  : '가격 알림 켜기'
+                            }
                             className={`flex items-center justify-center rounded-xl border px-3.5 py-2.5 text-xl transition-colors duration-150 ${
-                              togglingAlert
-                                ? 'cursor-default opacity-40 border-[var(--color-border)] text-[var(--color-text-secondary)]'
+                              togglingAlert || isFreeGame
+                                ? 'cursor-not-allowed opacity-40 border-[var(--color-border)] text-[var(--color-text-secondary)]'
                                 : isBellActive
                                   ? 'cursor-pointer border-green-400 text-green-400 hover:bg-green-400/10'
                                   : 'cursor-pointer border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]'
@@ -383,10 +396,14 @@ export default function GameDetailPage() {
                               isBellActive ? 'text-green-400' : 'text-[var(--color-text-secondary)]'
                             }`}
                           >
-                            {isBellActive ? '가격 알림 ON' : '가격 알림 OFF'}
+                            {isFreeGame
+                              ? '무료 게임은 알림을 설정할 수 없습니다'
+                              : isBellActive
+                                ? '가격 알림 ON'
+                                : '가격 알림 OFF'}
                           </span>
 
-                          {existingAlert?.isActive && !showAlertForm && (
+                          {!isFreeGame && existingAlert?.isActive && !showAlertForm && (
                             <div
                               onClick={() => setShowAlertForm(true)}
                               className="text-sm text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-[var(--color-text-primary)] underline"
@@ -396,7 +413,7 @@ export default function GameDetailPage() {
                           )}
                         </div>
 
-                        {existingAlert?.isActive && !showAlertForm && (
+                        {!isFreeGame && existingAlert?.isActive && !showAlertForm && (
                           <div className="mt-3 text-sm text-[var(--color-text-secondary)] space-y-1">
                             <div>
                               할인 시작 알림: {existingAlert.discountStartEnabled ? 'ON' : 'OFF'}
@@ -409,7 +426,7 @@ export default function GameDetailPage() {
                           </div>
                         )}
 
-                        {isBellActive && showAlertForm && (
+                        {!isFreeGame && isBellActive && showAlertForm && (
                           <div className="mt-3">
                             <AlertForm
                               originalPrice={game.originalPrice}
