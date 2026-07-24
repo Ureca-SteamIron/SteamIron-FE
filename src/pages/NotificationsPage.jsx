@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '../shared/components/Box'
 import { getSession } from '../shared/utils/auth'
+import DiscordInviteModal from '../features/notification/components/DiscordInviteModal'
 import {
   getDiscordNotificationSetting,
   getUnreadNotificationCount,
@@ -46,6 +47,7 @@ export default function NotificationsPage() {
 
   const [discordEnabled, setDiscordEnabled] = useState(false)
   const [discordUpdating, setDiscordUpdating] = useState(false)
+  const [discordInviteOpen, setDiscordInviteOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [pageInfo, setPageInfo] = useState(null)
@@ -87,6 +89,7 @@ export default function NotificationsPage() {
     try {
       await updateDiscordNotificationSetting(next)
       setDiscordEnabled(next)
+      if (next) setDiscordInviteOpen(true)
     } catch (err) {
       alert(err.response?.data?.message ?? err.message)
     } finally {
@@ -155,6 +158,10 @@ export default function NotificationsPage() {
           웹 알림은 항상 저장되며, 켜면 같은 알림을 Discord로도 받아요
         </span>
       </Box>
+
+      {discordInviteOpen && (
+        <DiscordInviteModal onClose={() => setDiscordInviteOpen(false)} />
+      )}
 
       <Box style={{ marginTop: '20px' }}>
         <div
