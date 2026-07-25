@@ -4,6 +4,7 @@ import { FaBell, FaBellSlash, FaHeart, FaRegHeart, FaSteam } from 'react-icons/f
 import { HiSparkles } from 'react-icons/hi2'
 import Box from '../shared/components/Box'
 import SearchTopBar from '../shared/components/SearchTopBar'
+import { GENRE_OPTIONS } from '../shared/constants/gameFilters'
 import { getAiSummary, getGameDetail, refreshGame } from '../features/game/api/gameApi'
 import {
   createAlert,
@@ -41,6 +42,13 @@ function setLastRefreshAt(gameId, timestamp) {
     // localStorage 접근 실패 시 쿨다운 기능만 조용히 스킵
   }
 }
+
+// 메인 목록에서 필터로 지원하는 장르만 클릭 시 이동 가능하게 한다.
+// (DB엔 '인디' 등 32개 장르가 있지만 GENRE_OPTIONS는 8개뿐 — 미지원 장르로 이동하면
+//  필터 드롭다운엔 안 잡히고 결과만 이상해지므로, 지원 장르만 링크로 만든다.)
+const FILTERABLE_GENRES = new Set(
+  GENRE_OPTIONS.filter((o) => o.value !== 'all').map((o) => o.value),
+)
 
 export default function GameDetailPage() {
   const navigate = useNavigate()
@@ -389,7 +397,32 @@ export default function GameDetailPage() {
                           장르
                         </th>
                         <td className="px-4 py-3 text-[var(--color-text-primary)]">
-                          {game.genres?.length ? game.genres.join(', ') : '-'}
+                          {game.genres?.length ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {game.genres.map((genre) =>
+                                FILTERABLE_GENRES.has(genre) ? (
+                                  <button
+                                    key={genre}
+                                    type="button"
+                                    onClick={() => navigate(`/?genre=${encodeURIComponent(genre)}`)}
+                                    title={`'${genre}' 장르 게임 보기`}
+                                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface-alt)] px-2.5 py-0.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:border-green-400 hover:text-green-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                                  >
+                                    {genre}
+                                  </button>
+                                ) : (
+                                  <span
+                                    key={genre}
+                                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface-alt)] px-2.5 py-0.5 text-sm text-[var(--color-text-tertiary)]"
+                                  >
+                                    {genre}
+                                  </span>
+                                ),
+                              )}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
                         </td>
                       </tr>
                       <tr className="border-b border-[var(--color-border)]">
