@@ -90,7 +90,7 @@ export default function PriceHistoryChart({ gameId }) {
     return <div style={{ color: '#aaa' }}>아직 가격 변동 기록이 없습니다.</div>
 
   return (
-    <div style={{ width: '100%', height: '220px' }}>
+    <div style={{ width: '100%', height: '100%', minHeight: '160px' }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
           <defs>
