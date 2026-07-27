@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FaBell, FaBellSlash, FaHeart, FaRegHeart, FaSteam } from 'react-icons/fa'
 import { HiSparkles } from 'react-icons/hi2'
@@ -71,10 +71,6 @@ export default function GameDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // 알림 팝오버가 화면 아래쪽에서 열리면 저장/취소 버튼이 화면 밖으로 나갈 수 있어서,
-  // 열릴 때 팝오버 전체가 보이도록 스크롤해준다.
-  const alertPanelRef = useRef(null)
-
   // 찜 토글: 목록 화면들과 동일한 훅을 재사용한다. 이 페이지는 게임이 하나뿐이라
   // Set에는 항상 이 게임의 appId 하나만 들어있거나 비어있다.
   const [wishlistIds, setWishlistIds] = useState(new Set())
@@ -95,6 +91,9 @@ export default function GameDetailPage() {
   const [cooldownSec, setCooldownSec] = useState(0)
 
   const [showAlertForm, setShowAlertForm] = useState(false)
+  // 알림 팝오버 자체를 열지 닫을지 (existingAlert.isActive와는 별개 — 데이터가 살아있어도
+  // 사용자가 바깥을 클릭하면 닫혀야 하고, 새로고침 직후엔 항상 닫힌 채로 시작해야 한다)
+  const [alertPanelOpen, setAlertPanelOpen] = useState(false)
   const [savingAlert, setSavingAlert] = useState(false)
   const [loadingAlert, setLoadingAlert] = useState(false)
   const [togglingAlert, setTogglingAlert] = useState(false)
@@ -138,7 +137,17 @@ export default function GameDetailPage() {
     if (togglingAlert || game?.isFree) return
 
     if (!existingAlert) {
-      setShowAlertForm((current) => !current)
+      const next = !showAlertForm
+      setShowAlertForm(next)
+      setAlertPanelOpen(next)
+      setAlertMsg('')
+      return
+    }
+
+    if (existingAlert.isActive) {
+      // 이미 켜져 있으면 종 클릭은 설정 보기/닫기만 토글한다. 끄기(삭제)는 패널 안의 버튼으로 따로 뺐다 —
+      // 종을 눌렀는데 바로 삭제되면 그동안 설정한 알림을 다시 확인할 방법이 없어지기 때문.
+      setAlertPanelOpen((current) => !current)
       setAlertMsg('')
       return
     }
@@ -146,23 +155,29 @@ export default function GameDetailPage() {
     setTogglingAlert(true)
     setAlertMsg('')
 
-    if (existingAlert.isActive) {
-      deleteAlert(existingAlert.alertId)
-        .then(() => {
-          setExistingAlert(null)
-          setShowAlertForm(false)
-          setAlertMsg('가격 알림과 저장된 목표가를 삭제했습니다.')
-        })
-        .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
-        .finally(() => setTogglingAlert(false))
-      return
-    }
-
     setAlertActive(existingAlert.alertId, true)
       .then(() => {
         setExistingAlert((current) => ({ ...current, isActive: true }))
         setShowAlertForm(true)
+        setAlertPanelOpen(true)
         setAlertMsg('알림을 다시 켰습니다.')
+      })
+      .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
+      .finally(() => setTogglingAlert(false))
+  }
+
+  const handleDeleteAlert = () => {
+    if (!existingAlert || togglingAlert) return
+
+    setTogglingAlert(true)
+    setAlertMsg('')
+
+    deleteAlert(existingAlert.alertId)
+      .then(() => {
+        setExistingAlert(null)
+        setShowAlertForm(false)
+        setAlertPanelOpen(false)
+        setAlertMsg('가격 알림과 저장된 목표가를 삭제했습니다.')
       })
       .catch((err) => setAlertMsg(err.response?.data?.message ?? err.message))
       .finally(() => setTogglingAlert(false))
@@ -290,13 +305,7 @@ export default function GameDetailPage() {
   const isRefreshDisabled = refreshing || cooldownSec > 0
   const isFreeGame = game?.isFree === true
   const isBellActive = !isFreeGame && (existingAlert ? existingAlert.isActive : showAlertForm)
-  const isAlertPanelOpen = !isFreeGame && ((existingAlert?.isActive && !showAlertForm) || (isBellActive && showAlertForm))
-
-  useEffect(() => {
-    if (isAlertPanelOpen) {
-      alertPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }
-  }, [isAlertPanelOpen])
+  const isAlertPanelOpen = !isFreeGame && alertPanelOpen
 
   // 찜 개수: 서버가 내려준 초기값(game.wishlistCount)에서, 최초 상태(game.isWishlisted) 대비
   // 지금 찜 상태(wishlistIds)가 바뀐 만큼만 화면에서 즉시 보정한다(다시 조회하지 않고도 정확).
@@ -517,10 +526,10 @@ export default function GameDetailPage() {
                         onClick={handleBellToggle}
                         disabled={togglingAlert || isFreeGame || loadingAlert}
                         aria-label={
-                          isFreeGame ? '무료 게임은 알림을 설정할 수 없습니다' : isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'
+                          isFreeGame ? '무료 게임은 알림을 설정할 수 없습니다' : isBellActive ? '알림 설정 보기' : '가격 알림 켜기'
                         }
                         title={
-                          isFreeGame ? '무료 게임은 알림을 설정할 수 없습니다' : isBellActive ? '가격 알림 끄기' : '가격 알림 켜기'
+                          isFreeGame ? '무료 게임은 알림을 설정할 수 없습니다' : isBellActive ? '알림 설정 보기' : '가격 알림 켜기'
                         }
                         className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-sm transition-colors duration-150 ${
                           togglingAlert || isFreeGame || loadingAlert
@@ -534,29 +543,39 @@ export default function GameDetailPage() {
                         알림 {isBellActive ? 'ON' : '추가'}
                       </button>
 
-                      {/* 알림 세부 정보 / 수정 폼: 문서 흐름에서 빼서(absolute) 다른 패널을 밀어내지 않고 위에 뜬다 */}
+                      {/* 알림 세부 정보 / 수정 폼: 문서 흐름에서 빼서(absolute) 다른 패널을 밀어내지 않고 종 버튼 오른쪽에 뜬다 */}
                       {user && isAlertPanelOpen && (
                         <>
-                          {showAlertForm && (
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setShowAlertForm(false)}
-                            />
-                          )}
+                          {/* 바깥을 클릭하면 폼이든 요약이든 항상 닫히도록 팝오버가 열려있는 동안엔 항상 깔아둔다 */}
                           <div
-                            ref={alertPanelRef}
-                            className="absolute top-[calc(100%+8px)] left-0 z-50 w-[320px] max-h-[70vh] overflow-y-auto shadow-2xl shadow-black/50 rounded-xl"
-                          >
+                            className="fixed inset-0 z-40"
+                            onClick={() => {
+                              setAlertPanelOpen(false)
+                              setShowAlertForm(false)
+                            }}
+                          />
+                          {/* 아래로 펼치면 화면 아래쪽에서 열렸을 때 버튼줄이 잘리고, 스크롤로 보정하면
+                              그때마다 페이지가 훅 움직여서 거슬린다. 대신 옆(오른쪽)으로 펼쳐서
+                              세로 공간과 무관하게 항상 온전히 보이도록 한다. */}
+                          <div className="absolute top-0 left-[calc(100%+8px)] z-50 w-[320px] max-h-[70vh] overflow-y-auto shadow-2xl shadow-black/50 rounded-xl">
                             {existingAlert?.isActive && !showAlertForm && (
                               <div className={`${cardClass} p-4 text-sm text-[var(--color-text-secondary)] space-y-1`}>
                                 <div className="flex items-center justify-between">
                                   <span>알림 설정</span>
-                                  <span
-                                    onClick={() => setShowAlertForm(true)}
-                                    className="text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-[var(--color-text-primary)] underline"
-                                  >
-                                    수정
-                                  </span>
+                                  <div className="flex items-center gap-2.5">
+                                    <span
+                                      onClick={() => setShowAlertForm(true)}
+                                      className="text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-[var(--color-text-primary)] underline"
+                                    >
+                                      수정
+                                    </span>
+                                    <span
+                                      onClick={handleDeleteAlert}
+                                      className="text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:text-red-400 underline"
+                                    >
+                                      끄기
+                                    </span>
+                                  </div>
                                 </div>
                                 <div>할인 시작 알림: {existingAlert.discountStartEnabled ? 'ON' : 'OFF'}</div>
                                 <div>
@@ -575,7 +594,10 @@ export default function GameDetailPage() {
                                 initialRate={existingAlert?.discountRate ?? 30}
                                 submitting={savingAlert}
                                 onSubmit={handleSaveAlert}
-                                onCancel={() => setShowAlertForm(false)}
+                                onCancel={() => {
+                                  setShowAlertForm(false)
+                                  if (!existingAlert) setAlertPanelOpen(false)
+                                }}
                               />
                             )}
                           </div>
