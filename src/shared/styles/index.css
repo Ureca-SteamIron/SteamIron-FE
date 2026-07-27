@@ -273,21 +273,15 @@ body {
   animation: ironing-glide 1.3s ease-in-out infinite;
 }
 
-.ironing-loader__board {
+/* 다리미가 지나가는 궤적 바로 아래에 놓인 로고 텍스트. 다리미가 이 위를 다림질하는 것처럼 보이게 한다. */
+.ironing-loader__logo-text {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 26px;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--color-border-strong) 20%,
-    var(--color-border-strong) 80%,
-    transparent
-  );
-  opacity: 0.6;
+  left: 50%;
+  bottom: 30px;
+  height: 26px;
+  width: auto;
+  transform: translateX(-50%);
+  opacity: 0.9;
 }
 
 /* 진행 방향(왼쪽)의 다리미 끝 부분 근처에서 뭉게뭉게 피어오르는 스팀 */
