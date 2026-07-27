@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Box from '../shared/components/Box'
 import { DISCORD_REDIRECT_URI } from '../shared/constants/auth'
 import { exchangeDiscordCode } from '../features/auth/api/authApi'
 import { saveDiscordAccountSetupToken, saveSession } from '../shared/utils/auth'
+import { useTheme } from '../shared/hooks/useTheme'
+import darimiBlack from '../shared/resources/img/darimi_black.png'
+import darimiWhite from '../shared/resources/img/darimi_white.png'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
-  const [status, setStatus] = useState('Discord 로그인 처리 중...')
+  const theme = useTheme()
+  const [errorMessage, setErrorMessage] = useState(null)
   const calledRef = useRef(false)
 
   useEffect(() => {
@@ -16,7 +19,7 @@ export default function AuthCallbackPage() {
 
     const code = new URLSearchParams(window.location.search).get('code')
     if (!code) {
-      setStatus('Discord 인증 정보가 없습니다. 다시 로그인해주세요.')
+      setErrorMessage('Discord 인증 정보가 없습니다. 다시 로그인해주세요.')
       return
     }
 
@@ -31,12 +34,34 @@ export default function AuthCallbackPage() {
         saveSession(data)
         navigate('/', { replace: true })
       })
-      .catch((error) => setStatus(error.message))
+      .catch((error) => setErrorMessage(error.message))
   }, [navigate])
 
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg-page)] text-[var(--color-text-primary)] p-5">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-8 py-6 text-sm text-center">
+          {errorMessage}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', marginTop: '120px' }}>
-      <Box style={{ width: '400px', textAlign: 'center' }}>{status}</Box>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg-page)]">
+      <div className="ironing-loader">
+        <div className="ironing-loader__track">
+          <span className="ironing-loader__steam" />
+          <span className="ironing-loader__steam ironing-loader__steam--delay" />
+          <span className="ironing-loader__steam ironing-loader__steam--delay2" />
+          <img
+            src={theme === 'dark' ? darimiWhite : darimiBlack}
+            alt="다리미질 중"
+            className="ironing-loader__iron"
+          />
+          <div className="ironing-loader__board" />
+        </div>
+      </div>
     </div>
   )
 }
