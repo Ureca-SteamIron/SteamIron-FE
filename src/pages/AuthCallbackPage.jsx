@@ -6,6 +6,8 @@ import { saveDiscordAccountSetupToken, saveSession } from '../shared/utils/auth'
 import { useTheme } from '../shared/hooks/useTheme'
 import darimiBlack from '../shared/resources/img/darimi_black.png'
 import darimiWhite from '../shared/resources/img/darimi_white.png'
+import logoTextBlack from '../shared/resources/img/logo_text_black.png'
+import logoTextWhite from '../shared/resources/img/logo_text_white.png'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -59,7 +61,11 @@ export default function AuthCallbackPage() {
             alt="다리미질 중"
             className="ironing-loader__iron"
           />
-          <div className="ironing-loader__board" />
+          <img
+            src={theme === 'dark' ? logoTextWhite : logoTextBlack}
+            alt="스팀다리미"
+            className="ironing-loader__logo-text"
+          />
         </div>
       </div>
     </div>
