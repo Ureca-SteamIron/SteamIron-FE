@@ -2,7 +2,7 @@ import Box from './Box'
 import { GENRE_OPTIONS } from '../constants/gameFilters'
 
 // draftFilters: 입력 중인 값(모아뒀다가 onApply로 한번에 반영). setDraftFilters로 값 갱신.
-export default function FilterPanel({ draftFilters, setDraftFilters, onApply }) {
+export default function FilterPanel({ draftFilters, setDraftFilters, onApply, onReset }) {
   return (
     <Box
       noDefaultStyle
@@ -95,13 +95,22 @@ export default function FilterPanel({ draftFilters, setDraftFilters, onApply }) 
         할인중인 게임만
       </label>
 
-      <Box
-        noDefaultStyle
-        onClick={onApply}
-        className="text-center cursor-pointer font-semibold text-sm text-[var(--color-text-on-accent)] bg-green-400 rounded-lg py-2.5 transition-colors duration-150 hover:bg-green-300"
-      >
-        적용
-      </Box>
+      <div className="flex gap-2">
+        <Box
+          noDefaultStyle
+          onClick={onReset}
+          className="flex-1 text-center cursor-pointer font-semibold text-sm text-[var(--color-text-primary)] bg-transparent border border-[var(--color-border)] rounded-lg py-2.5 transition-colors duration-150 hover:border-[var(--color-border-hover)] hover:bg-[var(--color-bg-surface-alt)]"
+        >
+          초기화
+        </Box>
+        <Box
+          noDefaultStyle
+          onClick={onApply}
+          className="flex-1 text-center cursor-pointer font-semibold text-sm text-[var(--color-text-on-accent)] bg-green-400 rounded-lg py-2.5 transition-colors duration-150 hover:bg-green-300"
+        >
+          적용
+        </Box>
+      </div>
     </Box>
   )
 }
