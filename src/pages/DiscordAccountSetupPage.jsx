@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Box from '../shared/components/Box'
 import { buildDiscordAuthorizeUrl } from '../shared/constants/auth'
 import { setupDiscordAccount } from '../features/auth/api/authApi'
 import {
@@ -9,13 +8,14 @@ import {
   saveSession,
 } from '../shared/utils/auth'
 
-const inputStyle = {
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '12px 14px',
-  border: '2px solid black',
-  fontSize: '16px',
-}
+const inputClass =
+  'w-full box-border bg-[var(--color-bg-input)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] px-3.5 py-3 text-base outline-none focus:border-[var(--color-border-strong)] placeholder:text-[var(--color-text-tertiary)]'
+
+const primaryButtonClass =
+  'w-full py-3.5 rounded-xl text-[15px] font-semibold text-[var(--color-text-on-accent)] bg-green-400 transition-colors duration-150 hover:bg-green-300 disabled:cursor-default disabled:opacity-50'
+
+const backLinkClass =
+  'inline-flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2.5 text-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-surface-alt)] hover:border-[var(--color-border-hover)]'
 
 export default function DiscordAccountSetupPage() {
   const navigate = useNavigate()
@@ -50,52 +50,92 @@ export default function DiscordAccountSetupPage() {
 
   if (!setupToken) {
     return (
-      <div style={{ width: 'min(440px, calc(100vw - 40px))', margin: '0 auto', textAlign: 'center' }}>
-        <Box>계정 설정 인증이 없습니다. Discord 인증을 다시 진행해주세요.</Box>
-        <button
-          type="button"
-          onClick={() => { window.location.href = buildDiscordAuthorizeUrl() }}
-          style={{ marginTop: '16px', padding: '12px 18px' }}
-        >
-          Discord 인증 다시 하기
-        </button>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg-page)] text-[var(--color-text-primary)] p-5">
+        <div className="w-[min(440px,calc(100vw-40px))] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-8 text-center">
+          <p className="text-sm text-[var(--color-text-secondary)] m-0">
+            계정 설정 인증이 없습니다. Discord 인증을 다시 진행해주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => { window.location.href = buildDiscordAuthorizeUrl() }}
+            className={`${primaryButtonClass} mt-5`}
+          >
+            Discord 인증 다시 하기
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <main style={{ width: 'min(440px, calc(100vw - 40px))', margin: '0 auto', padding: '20px' }}>
-      <Box onClick={() => navigate('/login')} style={{ display: 'inline-block' }}>
-        ← 로그인으로
-      </Box>
+    <div className="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-primary)]">
+      <main className="w-[min(640px,calc(100vw-40px))] mx-auto p-5">
+        <div onClick={() => navigate('/login')} className={backLinkClass}>
+          ← 로그인으로
+        </div>
 
-      <section style={{ marginTop: '60px' }}>
-        <Box style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ margin: '4px 0 10px' }}>서비스 계정 설정</h2>
-          <p style={{ margin: 0, color: '#999' }}>일반 로그인에 사용할 아이디와 비밀번호를 정해주세요.</p>
-        </Box>
+        <section className="mt-[90px]">
+          <div className="text-center mb-7">
+            <div className="text-2xl font-bold text-[var(--color-text-heading)]">서비스 계정 설정</div>
+            <p className="mt-2.5 text-sm text-[var(--color-text-tertiary)]">
+              일반 로그인에 사용할 아이디와 비밀번호를 정해주세요.
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-          <label>
-            <span style={{ display: 'block', marginBottom: '7px' }}>아이디</span>
-            <input value={loginId} onChange={(event) => setLoginId(event.target.value)} minLength={4} maxLength={30} autoComplete="username" required style={inputStyle} />
-          </label>
-          <label>
-            <span style={{ display: 'block', marginBottom: '7px' }}>비밀번호</span>
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} maxLength={64} autoComplete="new-password" required style={inputStyle} />
-          </label>
-          <label>
-            <span style={{ display: 'block', marginBottom: '7px' }}>비밀번호 확인</span>
-            <input type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} minLength={8} maxLength={64} autoComplete="new-password" required style={inputStyle} />
-          </label>
+          <form onSubmit={handleSubmit} className="grid gap-3">
+            <label>
+              <span className="block mb-1.5 text-sm text-[var(--color-text-primary)]">아이디</span>
+              <input
+                value={loginId}
+                onChange={(event) => setLoginId(event.target.value)}
+                minLength={4}
+                maxLength={30}
+                autoComplete="username"
+                required
+                className={inputClass}
+              />
+            </label>
 
-          {error && <p role="alert" style={{ color: '#ff7777', margin: 0 }}>{error}</p>}
+            <label>
+              <span className="block mb-1.5 text-sm text-[var(--color-text-primary)]">비밀번호</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={8}
+                maxLength={64}
+                autoComplete="new-password"
+                required
+                className={inputClass}
+              />
+            </label>
 
-          <button type="submit" disabled={submitting} style={{ padding: '13px', border: '2px solid black', fontSize: '17px', cursor: 'pointer' }}>
-            {submitting ? '설정 중...' : '계정 설정하고 시작하기'}
-          </button>
-        </form>
-      </section>
-    </main>
+            <label>
+              <span className="block mb-1.5 text-sm text-[var(--color-text-primary)]">비밀번호 확인</span>
+              <input
+                type="password"
+                value={passwordConfirm}
+                onChange={(event) => setPasswordConfirm(event.target.value)}
+                minLength={8}
+                maxLength={64}
+                autoComplete="new-password"
+                required
+                className={inputClass}
+              />
+            </label>
+
+            {error && (
+              <p role="alert" className="text-red-400 text-sm my-0.5">
+                {error}
+              </p>
+            )}
+
+            <button type="submit" disabled={submitting} className={`${primaryButtonClass} mt-1.5`}>
+              {submitting ? '설정 중...' : '계정 설정하고 시작하기'}
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
   )
 }

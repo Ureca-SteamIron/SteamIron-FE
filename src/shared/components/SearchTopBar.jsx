@@ -41,44 +41,59 @@ export default function SearchTopBar({ initialKeyword = '' }) {
     navigate(`/search?keyword=${encodeURIComponent(trimmed)}`)
   }
 
-  // 타이핑할 때마다(디바운스) 자동완성 후보를 가져온다. 2자 미만이면 아예 요청 안 함(최소 글자수 규칙 재사용).
-  useEffect(() => {
-    const trimmed = searchKeyword.trim()
+  // 자동완성은 (state가 아니라) 실제 입력 이벤트에서만 트리거한다. initialKeyword로 마운트되는
+  // 첫 렌더(검색 결과 화면 진입 직후 등)에도 useEffect(deps:[searchKeyword])는 항상 한 번 실행되기
+  // 때문에, "마운트인지 타이핑인지"를 이펙트 안에서 구분하려 하면 StrictMode의 이펙트 2회 실행 때문에
+  // 그 구분 플래그가 깨진다. 아예 이펙트를 쓰지 않고 onChange에서만 디바운스+요청을 걸면
+  // 진짜 사용자 입력에만 반응하게 되어 이 문제 자체가 생기지 않는다.
+  const debounceTimerRef = useRef(null)
+  const requestTokenRef = useRef(0)
+
+  useEffect(() => () => clearTimeout(debounceTimerRef.current), [])
+
+  // 타이핑(onChange)뿐 아니라 다시 포커스했을 때도 이걸로 불러온다. searchKeyword가 initialKeyword로
+  // 채워진 채 마운트된 경우 onChange가 한 번도 안 일어나서 suggestGames가 비어있는 채로 남는데,
+  // 그 상태에서 입력창을 다시 클릭하면(onFocus) 빈 결과를 그대로 보여줘 "검색 결과가 없다"고
+  // 잘못 뜨는 문제가 있었다 — 그래서 포커스 시에도 항상 새로 조회한다.
+  const triggerSuggestFetch = (value) => {
+    clearTimeout(debounceTimerRef.current)
+
+    const trimmed = value.trim()
     if (trimmed.length < SEARCH_MIN_KEYWORD_LENGTH) {
       setShowDropdown(false)
       return
     }
 
-    let cancelled = false
     setSuggestLoading(true)
     setSuggestError(false)
     setShowDropdown(true)
 
-    const timer = setTimeout(() => {
+    // 늦게 도착하는 응답이 그 사이 타이핑한 최신 검색어 결과를 덮어쓰지 않도록 토큰으로 구분한다.
+    const myToken = ++requestTokenRef.current
+    debounceTimerRef.current = setTimeout(() => {
       searchGames(trimmed, 0, {}, SEARCH_SUGGESTION_LIMIT)
         .then((data) => {
-          if (cancelled) return
+          if (requestTokenRef.current !== myToken) return
           setSuggestGames(data.games)
           setSuggestSimilarGames(data.similarGames)
         })
         .catch(() => {
-          if (!cancelled) {
-            setSuggestError(true)
-            setSuggestGames([])
-            setSuggestSimilarGames([])
-          }
+          if (requestTokenRef.current !== myToken) return
+          setSuggestError(true)
+          setSuggestGames([])
+          setSuggestSimilarGames([])
         })
         .finally(() => {
-          if (!cancelled) setSuggestLoading(false)
+          if (requestTokenRef.current === myToken) setSuggestLoading(false)
         })
     }, SUGGEST_DEBOUNCE_MS)
+  }
 
-    // 새 키워드가 들어오면(다음 렌더 전) 이전 타이머를 취소하고, 늦게 도착하는 응답은 cancelled로 무시한다.
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [searchKeyword])
+  const handleKeywordChange = (value) => {
+    setSearchKeyword(value)
+    if (searchError) setSearchError('')
+    triggerSuggestFetch(value)
+  }
 
   // 검색창 바깥을 클릭하면 드롭다운을 닫는다.
   useEffect(() => {
@@ -112,17 +127,12 @@ export default function SearchTopBar({ initialKeyword = '' }) {
               type="text"
               placeholder="게임 이름으로 검색"
               value={searchKeyword}
-              onChange={(e) => {
-                setSearchKeyword(e.target.value)
-                if (searchError) setSearchError('')
-              }}
+              onChange={(e) => handleKeywordChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSearchSubmit()
                 if (e.key === 'Escape') setShowDropdown(false)
               }}
-              onFocus={() => {
-                if (searchKeyword.trim().length >= SEARCH_MIN_KEYWORD_LENGTH) setShowDropdown(true)
-              }}
+              onFocus={() => triggerSuggestFetch(searchKeyword)}
               className="w-full bg-transparent border-none outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
             />
           </Box>

@@ -7,6 +7,7 @@ import FilterPanel from '../shared/components/FilterPanel'
 import WishlistHeartButton from '../shared/components/WishlistHeartButton'
 import { getSession } from '../shared/utils/auth'
 import {
+  DEFAULT_FILTERS,
   SEARCH_MIN_KEYWORD_LENGTH,
   appliedFiltersToDraft,
   filtersFromSearchParams,
@@ -106,6 +107,19 @@ export default function SearchResultPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       writeFiltersToSearchParams(next, normalized)
+      next.set('page', '0')
+      return next
+    })
+  }
+
+  // draftFilters state를 거치지 않고 DEFAULT_FILTERS를 바로 URL에 반영한다.
+  // (setDraftFilters 직후 handleApplyFilters를 부르면 클로저에 잡힌 draftFilters가 아직
+  //  이전 값이라 반영이 안 되므로, 초기화는 기본값을 직접 써서 한 번에 처리한다.)
+  const handleResetFilters = () => {
+    setDraftFilters(DEFAULT_FILTERS)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      writeFiltersToSearchParams(next, normalizeFiltersForRequest(DEFAULT_FILTERS))
       next.set('page', '0')
       return next
     })
@@ -306,7 +320,12 @@ export default function SearchResultPage() {
             )}
           </div>
 
-          <FilterPanel draftFilters={draftFilters} setDraftFilters={setDraftFilters} onApply={handleApplyFilters} />
+          <FilterPanel
+            draftFilters={draftFilters}
+            setDraftFilters={setDraftFilters}
+            onApply={handleApplyFilters}
+            onReset={handleResetFilters}
+          />
         </div>
       </div>
     </div>
